@@ -1,4 +1,4 @@
-# Demo (almost) all LLM architectures in Java
+# Demo LLM zoo Java
 
 This is a demo application which implements different LLM (Large Language Model) architectures like GPT-1, GPT-2 and Llama in Java, for learning purposes.
 
