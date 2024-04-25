@@ -2,7 +2,7 @@
 <project>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>demo-gpt-common-util</artifactId>
+    <artifactId>demo-llm-common-util</artifactId>
     <parent>
         <groupId>huplay.demo</groupId>
         <artifactId>bom</artifactId>

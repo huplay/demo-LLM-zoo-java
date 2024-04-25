@@ -55,7 +55,7 @@ This slows down the process, but saves memory, so in theory you will be able to 
 
 ### GPT-2 (OpenAI) ###
 
-The GPT-2 models were published completely. (Code and trained parameters as well.) You can try all of these using the demo-gpt app:
+The GPT-2 models were published completely. (Code and trained parameters as well.) You can try all of these using the demo-llm-zoo app:
 
 | Name         | Hidden size | Dec. no. | Head no. | Max. length | Size of params |
 |--------------|------------:|---------:|---------:|------------:|---------------:|

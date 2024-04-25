@@ -2,7 +2,7 @@
 <project>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>demo-gpt-nd4j-util</artifactId>
+    <artifactId>demo-llm-nd4j-util</artifactId>
     <parent>
         <groupId>huplay.demo</groupId>
         <artifactId>bom</artifactId>
@@ -15,7 +15,7 @@
     <dependencies>
         <dependency>
             <groupId>huplay.demo</groupId>
-            <artifactId>demo-gpt-common-util</artifactId>
+            <artifactId>demo-llm-common-util</artifactId>
             <version>1.0</version>
         </dependency>
         <dependency>

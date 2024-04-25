@@ -2,7 +2,7 @@
 <project>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>demo-llm-java</artifactId>
+    <artifactId>demo-llm-zoo-java</artifactId>
     <parent>
         <groupId>huplay.demo</groupId>
         <artifactId>bom</artifactId>
