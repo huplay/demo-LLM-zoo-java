@@ -39,7 +39,7 @@ public class TransformerUtil
         // Applying the trained weights and biases
         for (int i = 0; i < vector.length; i++)
         {
-            result[i] = result[i] * weight[i] + (bias == null ? 0 : bias[i]);
+            result[i] = result[i] * weight[i] + bias[i];
         }
 
         return result;

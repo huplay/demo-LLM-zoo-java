@@ -5,17 +5,19 @@ import java.util.List;
 public class ParameterDescriptor
 {
     private final String fileName;
+    private final String id;
     private final long dataOffset;
     private final String format;
     private final DataType dataType;
-    private final List<Integer> shape;
+    private final List<Long> shape;
     private final long startOffset;
     private final long endOffset;
 
-    public ParameterDescriptor(String fileName, long dataOffset, String format, DataType dataType, List<Integer> shape,
-                               long startOffset, long endOffset)
+    public ParameterDescriptor(String fileName, String id, long dataOffset, String format, DataType dataType,
+                               List<Long> shape, long startOffset, long endOffset)
     {
         this.fileName = fileName;
+        this.id = id;
         this.dataOffset = dataOffset;
         this.format = format;
         this.dataType = dataType;
@@ -27,6 +29,11 @@ public class ParameterDescriptor
     public String getFileName()
     {
         return fileName;
+    }
+
+    public String getId()
+    {
+        return id;
     }
 
     public long getDataOffset()
@@ -44,7 +51,7 @@ public class ParameterDescriptor
         return dataType;
     }
 
-    public List<Integer> getShape()
+    public List<Long> getShape()
     {
         return shape;
     }
@@ -59,13 +66,20 @@ public class ParameterDescriptor
         return endOffset;
     }
 
+    public long getSizeInBytes()
+    {
+        return endOffset - startOffset;
+    }
+
     @Override
     public String toString()
     {
         return "ParameterDescriptor{" +
                 "fileName='" + fileName + '\'' +
+                ", id='" + id + '\'' +
+                ", dataOffset=" + dataOffset +
                 ", format='" + format + '\'' +
-                ", dataType='" + dataType + '\'' +
+                ", dataType=" + dataType +
                 ", shape=" + shape +
                 ", startOffset=" + startOffset +
                 ", endOffset=" + endOffset +

@@ -98,10 +98,12 @@ public class LlamaMHADecoder extends BaseDecoder
             double frequency;
             if (vector(ROTARY_EMBEDDING) == null)
             {
+                // No rotary embedding parameters, do the standard calculation
                 frequency = 1.0 / pow(10000.0f, (float) modulus / headSize);
             }
             else
             {
+                // Use the rotary embedding parameters. TODO: Fix it
                 modulus = i % (headSize/2);
                 frequency = vector(ROTARY_EMBEDDING)[modulus];
             }

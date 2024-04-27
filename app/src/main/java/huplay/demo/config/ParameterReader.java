@@ -95,19 +95,22 @@ public class ParameterReader
 
         for (Map.Entry<String, String> entry : rawEntries.entrySet())
         {
-            String key = entry.getKey();
+            String id = entry.getKey();
             String value = entry.getValue();
 
             DataType dataType = readDataType(value);
-            List<Integer> shape = readShape(value);
-            String[] offsets = readOffsets(value).split(",");
-            long start = Long.parseLong(offsets[0]);
-            long end = Long.parseLong(offsets[1]);
+            List<Long> shape = readShape(value);
+            long[] offsets = readOffsets(value);
 
-            ParameterDescriptor descriptor =
-                    new ParameterDescriptor(fileName, headerSize + 8, format, dataType, shape, start, end);
+            if (offsets == null || offsets.length != 2)
+            {
+                throw new RuntimeException("Parameter file read error. (" + id + ")");
+            }
 
-            parameterDescriptors.put(key, descriptor);
+            ParameterDescriptor descriptor = new ParameterDescriptor(fileName, id, headerSize + 8, format,
+                    dataType, shape, offsets[0], offsets[1]);
+
+            parameterDescriptors.put(id, descriptor);
         }
     }
 
@@ -142,13 +145,30 @@ public class ParameterReader
         return DataType.valueOf(dtype);
     }
 
-    private List<Integer> readShape(String value)
+    private List<Long> readShape(String value)
     {
-        // TODO
-        return null;
+        int start = value.indexOf("\"" + SHAPE_KEY + "\"");
+
+        if (start < 0) return null;
+
+        start = value.indexOf('[', start + OFFSETS_KEY.length() + 2);
+        int end = value.indexOf(']', start + 1);
+
+        String shape = value.substring(start + 1, end);
+
+        String[] parts = shape.split(",");
+
+        List<Long> result = new ArrayList<>(parts.length);
+
+        for (String part : parts)
+        {
+            result.add(Long.parseLong(part));
+        }
+
+        return result;
     }
 
-    private String readOffsets(String value)
+    private long[] readOffsets(String value)
     {
         int start = value.indexOf("\"" + OFFSETS_KEY + "\"");
 
@@ -157,7 +177,15 @@ public class ParameterReader
         start = value.indexOf('[', start + OFFSETS_KEY.length() + 2);
         int end = value.indexOf(']', start + 1);
 
-        return value.substring(start + 1, end);
+        String offsets = value.substring(start + 1, end);
+
+        String[] parts = offsets.split(",");
+
+        long[] result = new long[2];
+        result[0] = Long.parseLong(parts[0]);
+        result[1] = Long.parseLong(parts[1]);
+
+        return result;
     }
 
     private long readHeaderSize(String fileName)
@@ -224,6 +252,16 @@ public class ParameterReader
         return vector == null ? null : UTIL.splitVector(vector, rows);
     }
 
+    private void checkSize(ParameterDescriptor descriptor, long expectedSize)
+    {
+        long parameterSize = descriptor.getSizeInBytes() * 8 / descriptor.getDataType().getBits();
+        if (parameterSize != expectedSize)
+        {
+            throw new RuntimeException("The file has different size (" + parameterSize + ") " +
+                    "to the expected (" + expectedSize + "). Id: " + descriptor.getId());
+        }
+    }
+
     private float[] read(String key, int size, boolean isOptional)
     {
         ParameterDescriptor descriptor = parameterDescriptors.get(key);
@@ -239,6 +277,8 @@ public class ParameterReader
                 throw new RuntimeException("Descriptor not found for key: " + key);
             }
         }
+
+        checkSize(descriptor, size);
 
         long offset = descriptor.getDataOffset() + descriptor.getStartOffset();
         File file = new File(descriptor.getFileName());

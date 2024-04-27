@@ -140,14 +140,14 @@ public class AppLoader
 
         if (name == null)
         {
-            String path = ask(configRoot);
+            String path = ask(configRoot, configRoot);
             name = path.substring(configRoot.length() + 1);
         }
 
         return new Arguments(name, configRoot, modelRoot, maxLength, topK, isCalculationOnly, memorySize);
     }
 
-    private static String ask(String path) throws IOException
+    private static String ask(String path, String configRoot) throws IOException
     {
         File[] fileList = new File(path).listFiles();
 
@@ -177,16 +177,17 @@ public class AppLoader
 
             if (directories.isEmpty())
             {
-                OUT.println("There are no models in this folder");
-                System.exit(0);
-            }
-            else if (directories.size() == 1)
-            {
-                // If there's only a single possibility, jump into that
-                return ask(path + "/" + directories.get(0));
+                // Go back a level if there's no model here and no subfolders
+                OUT.println("There is no model in the selected folder.");
+                return ask(getParentFolder(path), configRoot);
             }
             else
             {
+                if (!path.equals(configRoot))
+                {
+                    OUT.println("0: ..");
+                }
+
                 // Display the list of directories
                 int i = 1;
                 for (String directory : directories)
@@ -194,12 +195,12 @@ public class AppLoader
                     String name = directory;
                     if (directory.startsWith("("))
                     {
+                        // Remove the bracketed order from the name
                         int closing = directory.indexOf(")");
                         name = directory.substring(closing + 1);
                     }
 
                     OUT.println(i + ": " + name);
-                    //directories.add(directory);
                     i++;
                 }
 
@@ -214,30 +215,56 @@ public class AppLoader
 
                     try
                     {
+                        if (text.equals("x") || text.equals("X"))
+                        {
+                            choice = -1;
+                            break;
+                        }
+
                         choice = Integer.parseInt(text);
-                        if (choice > 0 && choice <= directories.size())
+                        if ( (choice > 0 && choice <= directories.size()) || (!path.equals(configRoot) && choice == 0))
                         {
                             break;
                         }
 
-                        OUT.print("Incorrect choice. ");
+                        OUT.println("Incorrect choice. (Press X to exit any time.)");
                     }
                     catch (Exception e)
                     {
-                        OUT.print("Incorrect choice. ");
+                        OUT.println("Incorrect choice. (Press X to exit any time.)");
                     }
                 }
 
-                // Use the selected directory
+                String newPath = "";
+                if (choice == -1)
+                {
+                    OUT.println("Bye!");
+                    System.exit(0);
+                }
+                else if (choice == 0)
+                {
+                    newPath = getParentFolder(path);
+                }
+                else
+                {
+                    newPath = path + "/" + directories.get(choice - 1);
+                }
+
                 OUT.println();
-                return ask(path + "/" + directories.get(choice - 1));
+                return ask(newPath, configRoot);
             }
         }
 
-        OUT.println("There are no models in this folder");
+        OUT.println("There are no configured models.");
+        OUT.println("Bye!");
         System.exit(0);
-
         return null;
+    }
+
+    private static String getParentFolder(String path)
+    {
+        int lastIndex = path.lastIndexOf("/");
+        return path.substring(0, lastIndex);
     }
 
     private static int readInt(String value, int defaultValue)

@@ -5,7 +5,7 @@ import huplay.demo.config.Config;
 import huplay.demo.transformer.BaseTransformer;
 import huplay.demo.transformer.BaseDecoder;
 
-import static huplay.demo.TransformerUtil.layerNorm;
+import static huplay.demo.TransformerUtil.RMSLayerNorm;
 import static huplay.demo.config.ParameterType.*;
 
 /**
@@ -42,7 +42,7 @@ public class Llama extends BaseTransformer
         // Final normalization
         if (isOutputProcessing) // No need to execute for input tokens
         {
-            hiddenState = layerNorm(hiddenState, vector(OUTPUT_NORM_WEIGHT), vector(OUTPUT_NORM_BIAS), epsilon);
+            hiddenState = RMSLayerNorm(hiddenState, vector(OUTPUT_NORM_WEIGHT), epsilon);
         }
 
         return hiddenState;

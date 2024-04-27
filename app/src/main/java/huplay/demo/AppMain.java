@@ -6,7 +6,6 @@ import huplay.demo.config.ParameterReader;
 import huplay.demo.config.TransformerType;
 import huplay.demo.tokenizer.Tokenizer;
 import huplay.demo.transformer.BaseTransformer;
-import huplay.demo.util.Util;
 
 import java.io.BufferedReader;
 import java.io.IOException;
