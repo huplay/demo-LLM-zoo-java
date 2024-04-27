@@ -10,7 +10,7 @@ import static huplay.demo.AppMain.OUT;
  */
 public class Config
 {
-    private boolean isCalculationOnly = false;
+    private boolean isCalculationOnly;
     private final Arguments arguments;
 
     private final String name;

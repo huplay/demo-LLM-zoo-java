@@ -42,7 +42,7 @@ public class GPT2Tokenizer implements Tokenizer
         List<Integer> result = new ArrayList<>();
 
         Matcher matcher = pattern.matcher(text);
-        List<String> unicodes = new ArrayList<>();
+        List<String> unicodeText = new ArrayList<>();
 
         while (matcher.find())
         {
@@ -56,10 +56,10 @@ public class GPT2Tokenizer implements Tokenizer
                 match.append(charDecoding.get(value));
             }
 
-            unicodes.add(match.toString());
+            unicodeText.add(match.toString());
         }
 
-        for (String word : unicodes)
+        for (String word : unicodeText)
         {
             for (String token : BytePairEncoding.encode(word, merges).split(" "))
             {

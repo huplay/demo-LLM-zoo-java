@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
 
 /**
  * Tokenizer which is similar to OpenAI's GPT-1 tokenizer (Not fully compatible, but for most cases should work)
- * https://github.com/huggingface/transformers/blob/v4.27.2/src/transformers/models/openai/tokenization_openai.py#L233
+ * <a href="https://github.com/huggingface/transformers/blob/v4.27.2/src/transformers/models/openai/tokenization_openai.py#L233">...</a>
  */
 public class GPT1Tokenizer implements Tokenizer
 {
@@ -53,7 +53,7 @@ public class GPT1Tokenizer implements Tokenizer
         List<Integer> result = new ArrayList<>();
 
         Matcher matcher = pattern.matcher(text);
-        List<String> unicodes = new ArrayList<>();
+        List<String> unicodeText = new ArrayList<>();
 
         while (matcher.find())
         {
@@ -67,10 +67,10 @@ public class GPT1Tokenizer implements Tokenizer
                 match.append(charDecoding.get(value));
             }
 
-            unicodes.add(match.toString());
+            unicodeText.add(match.toString());
         }
 
-        for (String word : unicodes)
+        for (String word : unicodeText)
         {
             for (String token : BytePairEncoding.encode(word, merges).split(" "))
             {

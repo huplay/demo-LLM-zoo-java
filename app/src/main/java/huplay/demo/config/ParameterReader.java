@@ -46,7 +46,8 @@ public class ParameterReader
         }
     }
 
-    private void readDescriptor(String fileName) {
+    private void readDescriptor(String fileName)
+    {
         fileName = config.getModelPath() + fileName;
 
         long headerSize = readHeaderSize(fileName);
@@ -57,10 +58,12 @@ public class ParameterReader
         String rawMetadata = null;
         Map<String, String> rawEntries = new HashMap<>();
 
-        while (true) {
+        while (true)
+        {
             int start = header.indexOf('"', index);
 
-            if (start < 0) {
+            if (start < 0)
+            {
                 break;
             }
 
@@ -73,20 +76,25 @@ public class ParameterReader
 
             String value = header.substring(start + 1, index);
 
-            if (key.equals(METADATA_KEY)) {
+            if (key.equals(METADATA_KEY))
+            {
                 rawMetadata = value;
-            } else {
+            }
+            else
+            {
                 rawEntries.put(key, value);
             }
 
-            if (index == headerSize - 1) {
+            if (index == headerSize - 1)
+            {
                 break;
             }
         }
 
         String format = readFormat(rawMetadata);
 
-        for (Map.Entry<String, String> entry : rawEntries.entrySet()) {
+        for (Map.Entry<String, String> entry : rawEntries.entrySet())
+        {
             String key = entry.getKey();
             String value = entry.getValue();
 
@@ -105,6 +113,11 @@ public class ParameterReader
 
     private String readFormat(String value)
     {
+        if (value == null)
+        {
+            return null;
+        }
+
         int start = value.indexOf("\"" + FORMAT_KEY + "\"");
 
         if (start < 0) return null;
@@ -289,60 +302,11 @@ public class ParameterReader
         for (int i = 0; i < size; i++)
         {
             ret[i] = toFloat32(array[i]);
-            //ret[i] = toFullPrecision(array[i], array[i+1]);
         }
 
         return ret;
     }
 
-/*
-    private float toFullPrecision(byte first, byte second)
-    {
-        ByteBuffer byteBuffer = ByteBuffer.allocate(4);
-
-        byteBuffer.put((byte)0);
-        byteBuffer.put((byte)0);
-        byteBuffer.put(first);
-        byteBuffer.put(second);
-
-        byteBuffer.position(0);
-
-        return byteBuffer.getFloat();
-    }
-
-    private float toFloat32(short value)
-    {
-        int mantisa = value & 0x03ff;
-        int exponent = value & 0x7c00;
-
-        if (exponent == 0x7c00)
-        {
-            exponent = 0x3fc00;
-        }
-        else if (exponent != 0)
-        {
-            exponent += 0x1c000;
-            if (mantisa == 0 && exponent > 0x1c400)
-            {
-                return Float.intBitsToFloat((value & 0x8000) << 16 | exponent << 13 | 0x3ff);
-            }
-        }
-        else if (mantisa != 0)
-        {
-            exponent = 0x1c400;
-            do
-            {
-                mantisa <<= 1;
-                exponent -= 0x400;
-            }
-            while ((mantisa & 0x400) == 0);
-
-            mantisa &= 0x3ff;
-        }
-
-        return Float.intBitsToFloat((value & 0x8000) << 16 | (exponent | mantisa) << 13);
-    }
-*/
     private float toFloat32(short value)
     {
         int signFlag = value & 0b1000_0000_0000_0000; // Extract sign (1st bit)
@@ -389,106 +353,4 @@ public class ParameterReader
             return Float.intBitsToFloat(signFlag << 16 | (exponent | mantissa) << 13);
         }
     }
-
-    public float[][] splitVectorTransposed(float[] numbers, int rows, int cols)
-    {
-        float[][] matrix = new float[rows][cols];
-
-        int row = 0;
-        int col = 0;
-        for (int i = 0; i < numbers.length; i++)
-        {
-            matrix[row][col] = numbers[i];
-
-            row++;
-
-            if (row == rows)
-            {
-                row = 0;
-                col++;
-            }
-        }
-
-        return matrix;
-    }
-/*
-    private File findFile(String name, int size)
-    {
-        String fileName = config.getModelPath() + name;
-        File file = new File(fileName);
-
-        if ( ! file.exists())
-        {
-            // Handling files split into parts
-            List<File> partFiles = new ArrayList<>();
-
-            int i = 1;
-            while (true)
-            {
-                File partFile = new File(fileName + ".part" + i);
-
-                if (partFile.exists()) partFiles.add(partFile);
-                else break;
-
-                i++;
-            }
-
-            if (partFiles.isEmpty())
-            {
-                throw new RuntimeException("Parameter file not found: " + fileName);
-            }
-            else
-            {
-                file = mergeAndSaveParts(partFiles, fileName);
-            }
-        }
-
-        if (file.length() != size)
-        {
-            throw new RuntimeException("Incorrect file size (" + file.length() + "). Expected: " + size);
-        }
-
-        return file;
-    }
-
-    private File mergeAndSaveParts(List<File> partFiles, String fileName)
-    {
-        File file = new File(fileName);
-
-        try
-        {
-            DataOutputStream output = new DataOutputStream(new BufferedOutputStream(Files.newOutputStream(file.toPath())));
-
-            for (File partFile : partFiles)
-            {
-                byte[] array = new byte[(int) partFile.length()];
-
-                try (FileInputStream stream = new FileInputStream(partFile))
-                {
-                    FileChannel inChannel = stream.getChannel();
-                    ByteBuffer buffer = inChannel.map(FileChannel.MapMode.READ_ONLY, 0, inChannel.size());
-
-                    buffer.get(array);
-                }
-                catch (Exception e)
-                {
-                    throw new RuntimeException("Parameter file read error. (" + partFile.getName() + ")");
-                }
-
-                for (byte value : array)
-                {
-                    output.writeByte(value);
-                }
-            }
-
-            output.close();
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException("Can't create concatenated file (" + fileName + ") Exception: " + e.getMessage());
-        }
-
-        return file;
-    }
-*/
 }

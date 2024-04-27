@@ -21,7 +21,6 @@ import static huplay.demo.AppLoader.*;
 public class AppMain
 {
     public static final PrintStream OUT = getPrintStream();
-    public static final Util UTIL = new Util();
 
     public static void main(String... args) throws Exception
     {

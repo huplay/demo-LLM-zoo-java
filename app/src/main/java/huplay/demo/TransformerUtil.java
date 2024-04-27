@@ -55,16 +55,16 @@ public class TransformerUtil
 
         // Calculate the sum of squares
         float sum = 0f;
-        for (int i = 0; i < size; i++)
+        for (float value : vector)
         {
-            sum += vector[i] * vector[i];
+            sum += value * value;
         }
 
         // Calculate room mean square
-        sum = 1f / sqrt(sum / vector.length + epsilon);
+        sum = 1f / sqrt(sum / size + epsilon);
 
         //  Normalize and scale
-        float[] result = new float[vector.length];
+        float[] result = new float[size];
 
         for (int i = 0; i < size; i++)
         {

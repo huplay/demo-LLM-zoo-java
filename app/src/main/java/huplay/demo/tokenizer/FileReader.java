@@ -48,7 +48,7 @@ public class FileReader
         }
         catch (IOException e)
         {
-            e.printStackTrace();
+            throw new RuntimeException("Cannot read tokens file: " + fileName);
         }
     }
 
@@ -81,7 +81,7 @@ public class FileReader
         }
         catch (IOException e)
         {
-            e.printStackTrace();
+            throw new RuntimeException("Cannot read merges file: " + fileName);
         }
 
         return merges;

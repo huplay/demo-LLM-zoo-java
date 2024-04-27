@@ -3,41 +3,53 @@ package huplay.demo.config;
 public enum DataType
 {
     // Boolean
-    BOOL,
+    BOOL(1),
 
     // Unsigned byte
-    U8,
+    U8(8),
 
     // Signed byte
-    I8,
+    I8(8),
 
     // 16-bit signed integer
-    I16,
+    I16(16),
 
     // 16-bit unsigned integer
-    U16,
+    U16(16),
 
     // 16-bit float
-    F16,
+    F16(16),
 
     // 16-bit brain float
-    BF16,
+    BF16(16),
 
     // 32-bit signed integer
-    I32,
+    I32(32),
 
     // 32-bit unsigned integer
-    U32,
+    U32(32),
 
     // 32-bit float
-    F32,
+    F32(32),
 
     // 64-bit float
-    F64,
+    F64(64),
 
     // 64-bit signed integer
-    I64,
+    I64(64),
 
     // 64-bit unsigned integer
-    U64
+    U64(64);
+
+    private final int bits;
+
+    DataType(int bits)
+    {
+        this.bits = bits;
+    }
+
+    public int getBits()
+    {
+        return bits;
+    }
 }

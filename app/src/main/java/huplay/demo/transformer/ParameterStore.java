@@ -49,7 +49,7 @@ public abstract class ParameterStore
 
     protected void loadMatrix(ParameterType parameterType, String file, int rows, int cols)
     {
-        parameterSize += rows * cols;
+        parameterSize += (long) rows * cols;
         if (!isOnlyCalculation)
         {
             matrixParams.put(parameterType, reader.readMatrix(formatName(file), rows, cols));
@@ -58,7 +58,7 @@ public abstract class ParameterStore
 
     protected void loadMatrixOptional(ParameterType parameterType, String file, int rows, int cols)
     {
-        parameterSize += rows * cols;
+        parameterSize += (long) rows * cols;
         if (!isOnlyCalculation)
         {
             matrixParams.put(parameterType, reader.readMatrixOptional(formatName(file), rows, cols));

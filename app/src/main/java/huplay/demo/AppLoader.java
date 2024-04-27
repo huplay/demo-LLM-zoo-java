@@ -58,7 +58,7 @@ public class AppLoader
                     TransformerType transformerType = TransformerType.valueOf(config.getTransformerType());
                     BaseTransformer transformer = transformerType.getTransformer(config);
 
-                    memorySize = baseMemorySize + Math.round(transformer.getParameterSize() / 1000 / 1000 * 4);
+                    memorySize = baseMemorySize + Math.round((float) transformer.getParameterSize() / 1000 / 1000 * 4);
                 }
             }
 

@@ -24,7 +24,7 @@ The GPT-NEO series has the following specialities comparing to the GPT-2 models:
 - BFLOAT16 data type is used for the parameters, so instead of 4 bytes it uses only 2. It means the numbers are not as precise, but you can save memory.
   But the files itself stores 4 bytes for each number, where the first two bytes are fixed zeros.
   It means these are in fact FLOAT32 values, but the numbers not as precise how it could be.
-  Because there are no 16 bit float variable type in Java I used these numbers as 32 bit float values,
+  Because there are no 16-bit float variable type in Java I used these numbers as 32-bit float values,
   so the calculation isn't exactly the same as using 16 bit arithmetic, and no memory saving, but it works. 
 - There are no biases for the attention query/key/value matrices. That's why I had to make the bias optional.
   (The file mapping contains `<NULL>` values for these files.)

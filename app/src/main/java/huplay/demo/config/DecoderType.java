@@ -17,7 +17,7 @@ public enum DecoderType
     META_LLAMA_MHA,
     META_LLAMA_GQA;
 
-    public BaseDecoder getDecoder(int decoderId, Config config, ParameterReader reader)
+    public BaseDecoder getDecoder(int decoderId, Config config)
     {
         switch (this)
         {

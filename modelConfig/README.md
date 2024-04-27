@@ -104,7 +104,7 @@ Llama 2 was published in 18 July 2023 in three sizes. Llama 3 was published in 1
 
 All Llama 2 and 3 models has a base version, and a fine-tuned version for chat (instruct).
 
-The weights and the code is completely public for Llama 2 and 3, free to use even in commercial products. (Companies over 700 million monthly users has to request the licence.) 
+The weights and the code are completely public for Llama 2 and 3, free to use even in commercial products. (Companies over 700 million monthly users has to request the licence.) 
 
 Vocabulary size is 32,000 for Llama 1, 2; and 128,000 for Llama 3. 
 

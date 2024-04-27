@@ -27,7 +27,7 @@ public abstract class BaseTransformer extends ParameterStore
 
         for (int i = 0; i < decoderCount; i++)
         {
-            decoders.add(decoderType.getDecoder(i, config, reader));
+            decoders.add(decoderType.getDecoder(i, config));
         }
     }
 
