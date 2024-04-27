@@ -2,13 +2,13 @@ package huplay.demo.transformer.meta.llama;
 
 import huplay.demo.TransformerUtil;
 import huplay.demo.config.Config;
-import huplay.demo.transformer.AbstractDecoder;
+import huplay.demo.transformer.BaseDecoder;
 
-import static huplay.demo.App.UTIL;
+import static huplay.demo.AppLoader.UTIL;
 import static huplay.demo.TransformerUtil.*;
 import static huplay.demo.config.ParameterType.*;
 
-public class LlamaMHADecoder extends AbstractDecoder
+public class LlamaMHADecoder extends BaseDecoder
 {
     public LlamaMHADecoder(Config config, int decoderId)
     {
@@ -24,6 +24,8 @@ public class LlamaMHADecoder extends AbstractDecoder
         loadMatrix(MLP_1_WEIGHT, "mlp.gate_proj.weight", feedForwardSize, hiddenSize);
         loadMatrix(MLP_2_WEIGHT, "mlp.up_proj.weight", feedForwardSize, hiddenSize);
         loadMatrix(MLP_3_WEIGHT, "mlp.down_proj.weight", hiddenSize, feedForwardSize);
+
+        loadVectorOptional(ROTARY_EMBEDDING, "self_attn.rotary_emb.inv_freq", headSize / 2);
 
         // Calculate the attention dividend
         this.attentionDividend = sqrt(headSize);
@@ -83,27 +85,41 @@ public class LlamaMHADecoder extends AbstractDecoder
         float[][] keyByHead = UTIL.splitVector(key, headCount);
         float[][] valueByHead = UTIL.splitVector(value, headCount);
 
-        for (int i = 0; i < hiddenSize; i += 2)
-        {
-            float degree = ((float) (1.0 / Math.pow(10000.0f, (i % headSize) / (float) headSize))) * storedKeys.size();
-            float cos = (float) Math.cos(degree);
-            float sin = (float) Math.sin(degree);
-
-            // Rotate query
-            float query0 = query[i];
-            query[i] = query0 * cos - query[i + 1] * sin;
-            query[i + 1] = query0 * sin - query[i + 1] * cos;
-
-            // Rotate key
-            float key0 = key[i];
-            key[i] = key0 * cos - key[i + 1] * sin;
-            key[i + 1] = key0 * sin - key[i + 1] * cos;
-        }
-
         // Store the keys and values (these will be available while the following tokens will be processed)
         storedKeys.add(keyByHead);
         storedValues.add(valueByHead);
         int storedSize = storedKeys.size();
+
+        // Position embedding
+        for (int i = 0; i < hiddenSize; i += 2)
+        {
+            int modulus = i % headSize;
+
+            double frequency;
+            if (vector(ROTARY_EMBEDDING) == null)
+            {
+                frequency = 1.0 / pow(10000.0f, (float) modulus / headSize);
+            }
+            else
+            {
+                modulus = i % (headSize/2);
+                frequency = vector(ROTARY_EMBEDDING)[modulus];
+            }
+
+            double degree = frequency * storedSize;
+            float x = cos(degree);
+            float y = sin(degree);
+
+            // Rotate query
+            float query0 = query[i];
+            query[i] = query0 * x - query[i + 1] * y;
+            query[i + 1] = query0 * y - query[i + 1] * x;
+
+            // Rotate key
+            float key0 = key[i];
+            key[i] = key0 * x - key[i + 1] * y;
+            key[i + 1] = key0 * y - key[i + 1] * x;
+        }
 
         // Declaration of the variable for collecting the attention results for all heads
         float[][] valueAggregate = new float[headCount][headSize];

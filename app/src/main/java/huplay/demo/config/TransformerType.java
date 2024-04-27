@@ -1,6 +1,6 @@
 package huplay.demo.config;
 
-import huplay.demo.transformer.AbstractTransformer;
+import huplay.demo.transformer.BaseTransformer;
 import huplay.demo.transformer.eleutherai.gptneo.GPTNeo;
 import huplay.demo.transformer.huggingface.bloom.Bloom;
 import huplay.demo.transformer.meta.llama.Llama;
@@ -15,7 +15,7 @@ public enum TransformerType
     ELEUTHERAI_NEO,
     META_LLAMA;
 
-    public AbstractTransformer getTransformer(Config config)
+    public BaseTransformer getTransformer(Config config)
     {
         switch (this)
         {

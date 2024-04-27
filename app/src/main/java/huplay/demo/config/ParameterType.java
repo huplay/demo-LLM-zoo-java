@@ -29,6 +29,7 @@ public enum ParameterType
     ATT_NORM_WEIGHT,
     ATT_NORM_BIAS,
 
+    ROTARY_EMBEDDING,
 
     // Feed-forward block
     MLP_1_WEIGHT,

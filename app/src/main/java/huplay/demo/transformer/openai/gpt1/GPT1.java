@@ -2,10 +2,10 @@ package huplay.demo.transformer.openai.gpt1;
 
 import huplay.demo.config.DecoderType;
 import huplay.demo.config.Config;
-import huplay.demo.transformer.AbstractTransformer;
-import huplay.demo.transformer.AbstractDecoder;
+import huplay.demo.transformer.BaseTransformer;
+import huplay.demo.transformer.BaseDecoder;
 
-import static huplay.demo.App.UTIL;
+import static huplay.demo.AppLoader.UTIL;
 import static huplay.demo.config.ParameterType.*;
 
 /**
@@ -23,7 +23,7 @@ import static huplay.demo.config.ParameterType.*;
  * - 32 bit parameters
  * - query/key/value matrices are stored in a single matrix
  */
-public class GPT1 extends AbstractTransformer
+public class GPT1 extends BaseTransformer
 {
     public GPT1(Config config)
     {
@@ -40,7 +40,7 @@ public class GPT1 extends AbstractTransformer
         float[] hiddenState = UTIL.addVectors(embedding, matrix(POSITION_EMBEDDINGS)[pos]);
 
         // Decoder stack
-        for (AbstractDecoder decoder : decoders)
+        for (BaseDecoder decoder : decoders)
         {
             hiddenState = decoder.execute(hiddenState, isOutputProcessing);
         }

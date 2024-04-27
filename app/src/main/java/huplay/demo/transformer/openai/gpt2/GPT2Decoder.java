@@ -2,13 +2,13 @@ package huplay.demo.transformer.openai.gpt2;
 
 import huplay.demo.TransformerUtil;
 import huplay.demo.config.Config;
-import huplay.demo.transformer.AbstractDecoder;
+import huplay.demo.transformer.BaseDecoder;
 
-import static huplay.demo.App.UTIL;
+import static huplay.demo.AppLoader.UTIL;
 import static huplay.demo.TransformerUtil.*;
 import static huplay.demo.config.ParameterType.*;
 
-public class GPT2Decoder extends AbstractDecoder
+public class GPT2Decoder extends BaseDecoder
 {
     public GPT2Decoder(Config config, int decoderId)
     {

@@ -1,6 +1,6 @@
 package huplay.demo.config;
 
-import huplay.demo.transformer.AbstractDecoder;
+import huplay.demo.transformer.BaseDecoder;
 import huplay.demo.transformer.eleutherai.gptneo.NeoDecoder;
 import huplay.demo.transformer.huggingface.bloom.BloomDecoder;
 import huplay.demo.transformer.meta.llama.LlamaMHADecoder;
@@ -17,7 +17,7 @@ public enum DecoderType
     META_LLAMA_MHA,
     META_LLAMA_GQA;
 
-    public AbstractDecoder getDecoder(int decoderId, Config config, ParameterReader reader)
+    public BaseDecoder getDecoder(int decoderId, Config config, ParameterReader reader)
     {
         switch (this)
         {

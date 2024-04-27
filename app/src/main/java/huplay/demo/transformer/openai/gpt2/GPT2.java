@@ -2,10 +2,10 @@ package huplay.demo.transformer.openai.gpt2;
 
 import huplay.demo.config.DecoderType;
 import huplay.demo.config.Config;
-import huplay.demo.transformer.AbstractTransformer;
-import huplay.demo.transformer.AbstractDecoder;
+import huplay.demo.transformer.BaseTransformer;
+import huplay.demo.transformer.BaseDecoder;
 
-import static huplay.demo.App.UTIL;
+import static huplay.demo.AppLoader.UTIL;
 import static huplay.demo.TransformerUtil.layerNorm;
 import static huplay.demo.config.ParameterType.*;
 
@@ -17,7 +17,7 @@ import static huplay.demo.config.ParameterType.*;
  * - Final normalization is added after the last decoder
  * (The normalization before the first decoder's attention block gives more numerical stability at larger models.)
  */
-public class GPT2 extends AbstractTransformer
+public class GPT2 extends BaseTransformer
 {
     public GPT2(Config config)
     {
@@ -36,7 +36,7 @@ public class GPT2 extends AbstractTransformer
         float[] hiddenState = UTIL.addVectors(embedding, matrix(POSITION_EMBEDDINGS)[pos]);
 
         // Decoder stack
-        for (AbstractDecoder decoder : decoders)
+        for (BaseDecoder decoder : decoders)
         {
             hiddenState = decoder.execute(hiddenState, isOutputProcessing);
         }

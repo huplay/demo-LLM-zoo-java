@@ -24,7 +24,6 @@ public interface Tokenizer
         {
             case "GPT-1": return new GPT1Tokenizer(path);
             case "GPT-2": return new GPT2Tokenizer(path);
-            case "BLOOM": return new BloomTokenizer(path);
             case "SentencePiece": return new SentencePieceTokenizer(path, config.getTokenCount());
         }
 

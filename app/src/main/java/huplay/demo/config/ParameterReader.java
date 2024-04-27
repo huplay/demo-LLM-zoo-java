@@ -6,7 +6,7 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-import static huplay.demo.App.UTIL;
+import static huplay.demo.AppLoader.UTIL;
 
 /**
  * Reader of the trained parameters
@@ -191,22 +191,40 @@ public class ParameterReader
 
     public float[] readVector(String file, int size)
     {
-        return read(file, size);
+        return read(file, size, false);
+    }
+
+    public float[] readVectorOptional(String file, int size)
+    {
+        return read(file, size, true);
     }
 
     public float[][] readMatrix(String file, int rows, int cols)
     {
-        float[] vector = read(file, rows * cols);
+        float[] vector = read(file, rows * cols, false);
         return vector == null ? null : UTIL.splitVector(vector, rows);
     }
 
-    private float[] read(String key, int size)
+    public float[][] readMatrixOptional(String file, int rows, int cols)
+    {
+        float[] vector = read(file, rows * cols, true);
+        return vector == null ? null : UTIL.splitVector(vector, rows);
+    }
+
+    private float[] read(String key, int size, boolean isOptional)
     {
         ParameterDescriptor descriptor = parameterDescriptors.get(key);
 
         if (descriptor == null)
         {
-            throw new RuntimeException("Descriptor not found for key: " + key);
+            if (isOptional)
+            {
+                return null;
+            }
+            else
+            {
+                throw new RuntimeException("Descriptor not found for key: " + key);
+            }
         }
 
         long offset = descriptor.getDataOffset() + descriptor.getStartOffset();

@@ -4,7 +4,7 @@ import huplay.demo.util.IndexedValue;
 
 import java.util.List;
 
-import static huplay.demo.App.UTIL;
+import static huplay.demo.AppLoader.UTIL;
 import static java.lang.Math.*;
 
 public class TransformerUtil
@@ -124,8 +124,23 @@ public class TransformerUtil
         return ret;
     }
 
+    public static float pow(float a, float b)
+    {
+        return (float)(Math.pow(a, b));
+    }
+
     public static float sqrt(float value)
     {
         return (float)(Math.sqrt(value));
+    }
+
+    public static float cos(double value)
+    {
+        return (float)(Math.cos(value));
+    }
+
+    public static float sin(double value)
+    {
+        return (float)(Math.sin(value));
     }
 }

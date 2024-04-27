@@ -3,13 +3,14 @@ package huplay.demo.config;
 import java.io.*;
 import java.util.*;
 
-import static huplay.demo.App.OUT;
+import static huplay.demo.AppMain.OUT;
 
 /**
  * Holder of the configuration stored in the model.properties file
  */
 public class Config
 {
+    private boolean isCalculationOnly = false;
     private final Arguments arguments;
 
     private final String name;
@@ -34,11 +35,15 @@ public class Config
     private final Map<String, String> transformerParameterOverrides;
     private final Map<String, String> decoderParameterOverrides;
 
+    private final int memorySizeOverride;
+    private final int baseMemorySize;
+
     private ParameterReader reader;
 
     public Config(Arguments arguments) throws Exception
     {
         this.arguments = arguments;
+        this.isCalculationOnly = arguments.isCalculationOnly();
 
         // Read all properties from the model.properties file
         Map<String, String> properties = readProperties(getConfigPath() + "model.properties");
@@ -63,22 +68,18 @@ public class Config
         this.transformerParameterOverrides = getParameterOverrides(properties, "transformer.parameter.overrides");
         this.decoderParameterOverrides = getParameterOverrides(properties, "decoder.parameter.overrides");
 
-        // Print settings
-        OUT.println("Model: " + name);
-        OUT.println("Path: " + getModelPath());
-        //OUT.print("Number of parameters: " + Math.round(getParameterSize() / 1000000d) + " M");
-        OUT.println("Hidden size: " + hiddenSize +
-                ", decoders: " + decoderCount +
-                ", heads: " + headCount +
-                ", head size: " + getHeadSize());
+        this.memorySizeOverride = getIntPropertyOptional(properties, "memory.size.override", 0);
+        this.baseMemorySize = getIntPropertyOptional(properties, "base.memory.size", 0);
+    }
 
-        long cost = getCalculationCost(50, 100);
-        OUT.println("Inference calculation cost: " + cost / 1_000_000_000 + " GigaFLOPS");
+    public boolean isCalculationOnly()
+    {
+        return isCalculationOnly;
+    }
 
-        if (arguments.isCalculationOnly()) System.exit(0);
-
-        OUT.println("Maximum length of generated text: " + arguments.getLengthLimit());
-        OUT.println("Output is selected from the best " + arguments.getTopK() + " tokens (topK)");
+    public void setCalculationOnly(boolean calculationOnly)
+    {
+        isCalculationOnly = calculationOnly;
     }
 
     private List<String> getParameterFiles(Map<String, String> properties) throws Exception
@@ -158,80 +159,23 @@ public class Config
         return properties;
     }
 
-    public long getCalculationCost(int inputLength, int outputLength)
-    {
-        long normCost = 4L * hiddenSize; // TODO: Sqrt averagediff + epsion is missing, but not much
-
-        long layer1Cost = dotProductCost(hiddenSize) * feedForwardSize // weights
-                + feedForwardSize // biases
-                + 8L * feedForwardSize; // gelu
-
-        long layer2Cost = dotProductCost(feedForwardSize) * hiddenSize + hiddenSize;
-
-        long decoderCost = 2 * normCost // norm cost
-                + getAverageAttentionCost(inputLength + outputLength) // Attention mechanism
-                + layer1Cost + layer2Cost // Feed forward block
-                + hiddenSize * 2L; // Residual connections
-
-        long determineOutputCost = dotProductCost(hiddenSize) * tokenCount + softmaxCost(40);
-
-        // TODO: Order and weighted random pick is missing
-
-        return hiddenSize * (inputLength + outputLength)
-                + decoderCost * decoderCount * inputLength + outputLength
-                + normCost * (outputLength + 1) // Final normalization
-                + determineOutputCost * (outputLength + 1);
-    }
-
-    private long dotProductCost(long size)
-    {
-        return 2 * size - 1;
-    }
-
-    private long softmaxCost(int size)
-    {
-        return 4L * size;
-
-        // Exp calculation was added as multiplication
-    }
-
-    private long getAverageAttentionCost(int length)
-    {
-        long QKVCost = dotProductCost(hiddenSize) * 3 * hiddenSize;
-
-        long attentionCost = dotProductCost(hiddenSize)
-                + 1L // Attention dividend
-                + softmaxCost(hiddenSize)
-                + 2L * hiddenSize;
-
-        return QKVCost + attentionCost * length / 2;
-    }
-
-    /*public long getParameterSize()
-    {
-        long wteSize = (long) tokenCount * hiddenSize;
-
-        long wpeSize = positionEncoder.equals("LEARNED") ? (long) maxLength * hiddenSize : 0;
-
-        long finalNormSize = (long) hiddenSize * 2;
-
-        return wteSize + wpeSize + (getDecoderParameterSize() * decoderCount) + finalNormSize;
-    }*/
-
-    private long getDecoderParameterSize()
-    {
-        long qkvSize = ((long) hiddenSize * hiddenSize + hiddenSize) * 3;
-        long projSize = (long) hiddenSize * hiddenSize + hiddenSize;
-        long normSize = (long) hiddenSize * 4;
-        long layer1Size = ((long) hiddenSize * feedForwardSize + feedForwardSize);
-        long layer2Size = (long) hiddenSize * feedForwardSize + hiddenSize;
-
-        return qkvSize + projSize + normSize + layer1Size + layer2Size;
-    }
-
     private int getIntProperty(Map<String, String> properties, String key) throws Exception
     {
         return toInt(getProperty(properties, key));
+    }
+
+    private int getIntPropertyOptional(Map<String, String> properties, String key, int defaultValue) throws Exception
+    {
+        String property = getProperty(properties, key, true);
+
+        if (property == null)
+        {
+            return defaultValue;
+        }
+        else
+        {
+            return toInt(property);
+        }
     }
 
     private float getFloatProperty(Map<String, String> properties, String key) throws Exception
@@ -330,6 +274,11 @@ public class Config
         return arguments.getTopK();
     }
 
+    public int getMemorySize()
+    {
+        return arguments.getMemorySize();
+    }
+
     public int getTokenCount()
     {
         return tokenCount;
@@ -413,5 +362,15 @@ public class Config
     public void setReader(ParameterReader reader)
     {
         this.reader = reader;
+    }
+
+    public int getMemorySizeOverride()
+    {
+        return memorySizeOverride;
+    }
+
+    public int getBaseMemorySize()
+    {
+        return baseMemorySize;
     }
 }

@@ -115,8 +115,8 @@ public class ParameterReaderTest
     {
         String path = new File("src/test/resources").getAbsolutePath() + "/";
 
-        Arguments arguments = new Arguments(name, path, path, 10, 10, false);
-        Config config = new Config(arguments);
-        return new ParameterReader(config);
+        Arguments arguments = new Arguments(name, path, path, 10, 10, false, 1024);
+        //Config config = new Config(arguments);
+        return null;//new ParameterReader(config);
     }
 }

@@ -19,7 +19,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>huplay.demo.App</mainClass>
+                            <mainClass>huplay.demo.AppLoader</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>

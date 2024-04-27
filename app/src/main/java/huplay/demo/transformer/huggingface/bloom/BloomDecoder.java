@@ -2,16 +2,16 @@ package huplay.demo.transformer.huggingface.bloom;
 
 import huplay.demo.TransformerUtil;
 import huplay.demo.config.Config;
-import huplay.demo.transformer.AbstractDecoder;
+import huplay.demo.transformer.BaseDecoder;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static huplay.demo.App.UTIL;
+import static huplay.demo.AppLoader.UTIL;
 import static huplay.demo.TransformerUtil.*;
 import static huplay.demo.config.ParameterType.*;
 
-public class BloomDecoder extends AbstractDecoder
+public class BloomDecoder extends BaseDecoder
 {
     private final float[] positionSlope;
 

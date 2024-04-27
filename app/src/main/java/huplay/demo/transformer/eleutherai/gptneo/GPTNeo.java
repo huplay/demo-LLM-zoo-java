@@ -2,10 +2,10 @@ package huplay.demo.transformer.eleutherai.gptneo;
 
 import huplay.demo.config.DecoderType;
 import huplay.demo.config.Config;
-import huplay.demo.transformer.AbstractTransformer;
-import huplay.demo.transformer.AbstractDecoder;
+import huplay.demo.transformer.BaseTransformer;
+import huplay.demo.transformer.BaseDecoder;
 
-import static huplay.demo.App.UTIL;
+import static huplay.demo.AppLoader.UTIL;
 import static huplay.demo.TransformerUtil.layerNorm;
 import static huplay.demo.config.ParameterType.*;
 
@@ -19,7 +19,7 @@ import static huplay.demo.config.ParameterType.*;
  * - No attention dividend, so the score isn't divided by a fixed value
  * - The weights are stored in transposed matrices (easier to execute the vector-matrix multiplication)
  */
-public class GPTNeo extends AbstractTransformer
+public class GPTNeo extends BaseTransformer
 {
     public GPTNeo(Config config)
     {
@@ -38,7 +38,7 @@ public class GPTNeo extends AbstractTransformer
         float[] hiddenState = UTIL.addVectors(embedding, matrix(POSITION_EMBEDDINGS)[pos]);
 
         // Decoder stack
-        for (AbstractDecoder decoder : decoders)
+        for (BaseDecoder decoder : decoders)
         {
             hiddenState = decoder.execute(hiddenState, isOutputProcessing);
         }

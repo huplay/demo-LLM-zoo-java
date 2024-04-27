@@ -2,8 +2,8 @@ package huplay.demo.transformer.huggingface.bloom;
 
 import huplay.demo.config.DecoderType;
 import huplay.demo.config.Config;
-import huplay.demo.transformer.AbstractTransformer;
-import huplay.demo.transformer.AbstractDecoder;
+import huplay.demo.transformer.BaseTransformer;
+import huplay.demo.transformer.BaseDecoder;
 
 import static huplay.demo.TransformerUtil.layerNorm;
 import static huplay.demo.config.ParameterType.*;
@@ -21,7 +21,7 @@ import static huplay.demo.config.ParameterType.*;
  *
  * TODO: Maybe something isn't perfect here, the output looks good, but very ofter repeats itself.
  */
-public class Bloom extends AbstractTransformer
+public class Bloom extends BaseTransformer
 {
     public Bloom(Config config)
     {
@@ -41,7 +41,7 @@ public class Bloom extends AbstractTransformer
         float[] hiddenState = layerNorm(embedding,  vector(INPUT_NORM_WEIGHT), vector(INPUT_NORM_BIAS), epsilon);
 
         // Decoder stack
-        for (AbstractDecoder decoder : decoders)
+        for (BaseDecoder decoder : decoders)
         {
             hiddenState = decoder.execute(hiddenState, isOutputProcessing);
         }

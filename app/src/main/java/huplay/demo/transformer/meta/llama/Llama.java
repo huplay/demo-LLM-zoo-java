@@ -2,8 +2,8 @@ package huplay.demo.transformer.meta.llama;
 
 import huplay.demo.config.DecoderType;
 import huplay.demo.config.Config;
-import huplay.demo.transformer.AbstractTransformer;
-import huplay.demo.transformer.AbstractDecoder;
+import huplay.demo.transformer.BaseTransformer;
+import huplay.demo.transformer.BaseDecoder;
 
 import static huplay.demo.TransformerUtil.layerNorm;
 import static huplay.demo.config.ParameterType.*;
@@ -20,7 +20,7 @@ import static huplay.demo.config.ParameterType.*;
  * - No biases, only weights
  * - Query, key and value matrices are stored separately
  */
-public class Llama extends AbstractTransformer
+public class Llama extends BaseTransformer
 {
     public Llama(Config config)
     {
@@ -34,7 +34,7 @@ public class Llama extends AbstractTransformer
     public float[] execute(int pos, float[] hiddenState, boolean isOutputProcessing)
     {
         // Decoder stack
-        for (AbstractDecoder decoder : decoders)
+        for (BaseDecoder decoder : decoders)
         {
             hiddenState = decoder.execute(hiddenState, isOutputProcessing);
         }

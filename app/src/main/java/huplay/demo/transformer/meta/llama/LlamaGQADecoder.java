@@ -2,13 +2,13 @@ package huplay.demo.transformer.meta.llama;
 
 import huplay.demo.TransformerUtil;
 import huplay.demo.config.Config;
-import huplay.demo.transformer.AbstractDecoder;
+import huplay.demo.transformer.BaseDecoder;
 
-import static huplay.demo.App.UTIL;
+import static huplay.demo.AppLoader.UTIL;
 import static huplay.demo.TransformerUtil.*;
 import static huplay.demo.config.ParameterType.*;
 
-public class LlamaGQADecoder extends AbstractDecoder
+public class LlamaGQADecoder extends BaseDecoder
 {
     public LlamaGQADecoder(Config config, int decoderId)
     {

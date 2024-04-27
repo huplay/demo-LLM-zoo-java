@@ -3,14 +3,12 @@ package huplay.demo;
 import huplay.demo.util.IndexedValue;
 import huplay.demo.config.Config;
 import huplay.demo.config.ParameterType;
-import huplay.demo.config.TransformerType;
 import huplay.demo.tokenizer.Tokenizer;
-import huplay.demo.transformer.AbstractTransformer;
+import huplay.demo.transformer.BaseTransformer;
 
 import java.util.*;
-import static huplay.demo.App.OUT;
-import static huplay.demo.App.UTIL;
-import static huplay.demo.TransformerUtil.softmax;
+import static huplay.demo.AppMain.OUT;
+import static huplay.demo.AppLoader.UTIL;
 
 /**
  * Decoder-only Transformer implementation
@@ -19,17 +17,14 @@ public class Communicator
 {
     private final Config config;
     private final Tokenizer tokenizer;
-    private final AbstractTransformer transformer;
+    private final BaseTransformer transformer;
     private final float[][] tokenEmbeddings;
 
-    public Communicator(Config config, Tokenizer tokenizer)
+    public Communicator(Config config, Tokenizer tokenizer, BaseTransformer transformer)
     {
         this.config = config;
         this.tokenizer = tokenizer;
-
-        TransformerType transformerType = TransformerType.valueOf(config.getTransformerType());
-        this.transformer = transformerType.getTransformer(config);
-
+        this.transformer = transformer;
         this.tokenEmbeddings = transformer.matrix(ParameterType.TOKEN_EMBEDDINGS);
     }
 
