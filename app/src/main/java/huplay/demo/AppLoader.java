@@ -82,7 +82,7 @@ public class AppLoader
     {
         File file = new File("modelConfig");
         String configRoot = file.getAbsolutePath();
-        String modelRoot = System.getenv().getOrDefault("DEMO_GPT_MODEL_ROOT", configRoot);
+        String modelRoot = System.getenv().getOrDefault("DEMO_LLM_ZOO_MODEL_ROOT", configRoot);
 
         // Default values
         String name = null;

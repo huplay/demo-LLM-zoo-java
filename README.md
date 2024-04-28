@@ -8,36 +8,37 @@ TensorFlow, Pytorch or similar tools are NOT used. The core mathematical utility
 
 ## Trained parameters ##
 
-To use this app you have to find the trained parameters in safetensors format.
+The parameter files should be provided in `safetensors` file format, but the app can download these from the configured repository.
 
-There is a `modelConfig` folder where all the ported models have a subfolder with a configuration file.
+## Configuration ##
+
+Every ported model has a subfolder within the `modelConfig` folder. (Organised in subfolders.) A `model.properties` file describes all details to use the model, or to download it.
 
 ## Install ##
 
-1. Install Java. For the standard version 1.8 or above. For the Vector API implementation at least Java 18. (Tested only on Java 20).
-
-
-2. Install Maven. (Java compile/build tool) (3.8.6 used during development).
-
-
-3. Download and unzip this module: https://github.com/huplay/demo-LLM-zoo-java
+1. Download and unzip this module: https://github.com/huplay/demo-LLM-zoo-java
 
    (Or using git: ```git clone https://github.com/huplay/demo-LLM-zoo-java.git```)
 
+2. Install Java. (At least version 1.8, but using Vector API utility requires Java 18 or above. Tested on Java 20, 22.)
 
-4. Download and unzip the files with the trained parameters for the version you want to use.
+3. Using a command line tool (`cmd`) enter into the main directory:
 
-   The files should be placed into the `modelConfig/<model name>` folder, so for example using the GPT-2 XL version to `modelConfig/GPT2/XL`. 
+   ```cd demo-LLM-zoo-java```
 
-5. Using a command line tool (`cmd`) enter into the main directory:
-   
-    ```cd demo-LLM-zoo-java```
+   And start the app:
+
+   ```run``` (On Windows)
 
 
-6. Compile (build) the application. There are 3 possibilities, based on that which utility implementation you want to use.
+Steps is you want to modify and rebuild the app:
+
+1. Install Maven. (Java compile/build tool) (3.8.6 used during development).
+
+2. Compile (build) the application. There are 3 possibilities, based on that which utility implementation you want to use.
    Standard: 
 
-   ```mvn clean install -Pstandard```
+   ```mvn clean install```
 
    Using Nd4j:
 
@@ -48,38 +49,30 @@ There is a `modelConfig` folder where all the ported models have a subfolder wit
    ```mvn clean install -Pvector-api```
 
 
-## Execution ##
+## Customization ##
 
-Execute the application:
-```run <model-name>``` (On Windows)
+At default the parameter files are downloaded to the model's configuration folder within ```modelConfig```. You can specify a different folder using the ```DEMO_LLM_ZOO_MODEL_ROOT``` environment variable.
+
+Without using the menu, you can directly select the model, where the ```<model-name>``` is the full path within the model root:
+
+   ```run <model-name>``` (On Windows)
     
 Or on any systems:```java -jar target/demo-LLM-zoo.jar <model-name>```
 
-The models are organized in a folder structure, so somtimes the `model-name` should contain its path. For example:
-
-`run GPT1`
-
-`run GPT2/SMALL`
-
-`run Llama2\tinyLlama15M`
-
+(To specify the order the folders has a (nn) prefix, which is removed when the folder name is displayed, but it is part of the model path.)
 
 If you want to use the Vector API version (in the case you installed that variant) you have to use the ``runv <model-name>`` command.
 This is necessary because the Vector API isn't ready (as of Java 20), added only as an incubator module, so we have to execute the Java Virtual Machine telling we want to use this incubator feature. 
   
-Using larger models it is necessary to increase the heap size (memory for Java). The ```run.bat / runv.bat``` handles it automatically, but if the app is called directly you should use the Java -Xmx and Xms flags. 
-
-
 ## Additional command line parameters ##
 
-- `config-root` - Path of the `modelConfig` folder (default: `/modelConfig`)
-- `model-root` - Path of the parameters folder (it can be different to the config-root) (default: `/modelConfig`)
-- `max` - Maximum number of generated tokens (default: 25)
-- `topk` - Number of possibilities to chose from as next token (default: 40)
+- `-max` - Maximum number of generated tokens (default: 25)
+- `-topk` - Number of possibilities to chose from as next token (default: 40)
+- `-calc` - Calculation only (without executing the model, it just displays the parameter size)
 
 Example:
 
-`run GPT2/XL max=1024 topk=100`
+`run GPT2/XL -max=1024 -topk=100`
 
 ## Usage ##
 
