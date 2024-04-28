@@ -8,14 +8,6 @@ TensorFlow, Pytorch or similar tools are NOT used. The core mathematical utility
 
 <img src="screenshot.png" height="300"/>
 
-## Trained parameters ##
-
-The parameter files should be provided in `safetensors` file format, but the app can download these from the configured repository.
-
-## Configuration ##
-
-Every ported model has a subfolder within the `modelConfig` folder. (Organised in subfolders.) A `model.properties` file describes all details to use the model, or to download it.
-
 ## Install ##
 
 1. Download and unzip this module: https://github.com/huplay/demo-LLM-zoo-java
@@ -32,6 +24,17 @@ Every ported model has a subfolder within the `modelConfig` folder. (Organised i
 
    ```run``` (On Windows)
 
+## Trained parameters ##
+
+The parameter files should be provided in `safetensors` file format, but the app can download these from the configured repository.
+
+## Configuration ##
+
+Every ported model has a subfolder within the `modelConfig` folder. (Organised in subfolders.) A `model.properties` file describes all details to use the model, or to download it.
+
+It is possible to create a new folder with a new `model.properties` file, and provide the specific details.
+
+## For developers ##
 
 Steps is you want to modify and rebuild the app:
 
@@ -78,7 +81,11 @@ Example:
 
 ## Usage ##
 
-The app shows a prompt, where you can provide a text:
+Actually there are two applications. The launcher app implements the model selection, which opens the main app in a separate window.
+
+It is necessary to setup the correct heap size (memory) for the main app, which depends on the selected model.
+
+The main app shows a prompt, where you can provide a text:
 
 ```Input text:```
 
