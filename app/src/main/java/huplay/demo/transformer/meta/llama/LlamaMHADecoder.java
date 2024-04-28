@@ -85,11 +85,6 @@ public class LlamaMHADecoder extends BaseDecoder
         float[][] keyByHead = UTIL.splitVector(key, headCount);
         float[][] valueByHead = UTIL.splitVector(value, headCount);
 
-        // Store the keys and values (these will be available while the following tokens will be processed)
-        storedKeys.add(keyByHead);
-        storedValues.add(valueByHead);
-        int storedSize = storedKeys.size();
-
         // Position embedding
         for (int i = 0; i < hiddenSize; i += 2)
         {
@@ -108,7 +103,7 @@ public class LlamaMHADecoder extends BaseDecoder
                 frequency = vector(ROTARY_EMBEDDING)[modulus];
             }
 
-            double degree = frequency * storedSize;
+            double degree = frequency * storedKeys.size();
             float x = cos(degree);
             float y = sin(degree);
 
@@ -122,6 +117,11 @@ public class LlamaMHADecoder extends BaseDecoder
             key[i] = key0 * x - key[i + 1] * y;
             key[i + 1] = key0 * y - key[i + 1] * x;
         }
+
+        // Store the keys and values (these will be available while the following tokens will be processed)
+        storedKeys.add(keyByHead);
+        storedValues.add(valueByHead);
+        int storedSize = storedKeys.size();
 
         // Declaration of the variable for collecting the attention results for all heads
         float[][] valueAggregate = new float[headCount][headSize];

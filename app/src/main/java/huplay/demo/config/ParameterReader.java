@@ -30,18 +30,6 @@ public class ParameterReader
         // Read the header(s) of the safetensors parameter file(s)
         for (String fileName : config.getParameterFiles())
         {
-            // TODO: If missing, download it
-            /*
-            URL url = new URL(config.getParameterUrl() + "/" + fileName);
-
-            ReadableByteChannel urlChannel = Channels.newChannel(url.openStream());
-
-            FileOutputStream outputStream = new FileOutputStream(fileName);
-            FileChannel fileChannel = outputStream.getChannel();
-
-            fileChannel.transferFrom(urlChannel, 0, Long.MAX_VALUE);
-            */
-
             readDescriptor(fileName);
         }
     }
@@ -262,9 +250,9 @@ public class ParameterReader
         }
     }
 
-    private float[] read(String key, int size, boolean isOptional)
+    private float[] read(String id, int size, boolean isOptional)
     {
-        ParameterDescriptor descriptor = parameterDescriptors.get(key);
+        ParameterDescriptor descriptor = parameterDescriptors.get(id);
 
         if (descriptor == null)
         {
@@ -274,7 +262,7 @@ public class ParameterReader
             }
             else
             {
-                throw new RuntimeException("Descriptor not found for key: " + key);
+                throw new RuntimeException("Descriptor not found for key: " + id);
             }
         }
 
@@ -291,12 +279,12 @@ public class ParameterReader
                 case BF16: return readBrainFloat16(stream, size, offset);
                 case F32: return readFloat32(stream, size, offset);
                 default:
-                    throw new RuntimeException("Not supported data type: " + descriptor.getDataType() + ", key: " + key);
+                    throw new RuntimeException("Not supported data type: " + descriptor.getDataType() + ", key: " + id);
             }
         }
         catch (IOException e)
         {
-            throw new RuntimeException("Parameter file read error in " + descriptor.getFileName() + ", key: " + key);
+            throw new RuntimeException("Parameter file read error in " + descriptor.getFileName() + ", key: " + id);
         }
     }
 

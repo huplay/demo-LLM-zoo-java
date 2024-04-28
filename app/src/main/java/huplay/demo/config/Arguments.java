@@ -11,10 +11,10 @@ public class Arguments
     private final int lengthLimit;
     private final int topK;
     private final boolean isCalculationOnly;
-    private final int memorySize;
+    private final int requestedMemorySize;
 
     public Arguments(String name, String configRoot, String modelRoot, int lengthLimit, int topK,
-                     boolean isCalculationOnly, int memorySize)
+                     boolean isCalculationOnly, int requestedMemorySize)
     {
         this.name = name;
         this.configRoot = configRoot;
@@ -22,7 +22,7 @@ public class Arguments
         this.lengthLimit = lengthLimit;
         this.topK = topK;
         this.isCalculationOnly = isCalculationOnly;
-        this.memorySize = memorySize;
+        this.requestedMemorySize = requestedMemorySize;
     }
 
     public String getName()
@@ -55,8 +55,8 @@ public class Arguments
         return isCalculationOnly;
     }
 
-    public int getMemorySize()
+    public int getRequestedMemorySize()
     {
-        return memorySize;
+        return requestedMemorySize;
     }
 }

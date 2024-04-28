@@ -28,52 +28,45 @@ public class AppLoader
     {
         logo();
 
+        // Read arguments (possibly asking the user to select the model)
         Arguments arguments = readArguments(args);
+
+        // Read config of the selected model
         Config config = new Config(arguments);
 
-        // TODO: Display all
         if (config.isCalculationOnly())
         {
+            // Calculation only. Display config, parameter size
             config.setCalculationOnly(true);
             TransformerType transformerType = TransformerType.valueOf(config.getTransformerType());
             BaseTransformer transformer = transformerType.getTransformer(config);
-
             displayConfig(config, transformer.getParameterSize());
         }
         else
         {
-            int memorySize = config.getMemorySize();
-            if (memorySize <= 0)
+            // Determine memory requirement
+            int memorySize = determineMemoryRequirement(config);
+
+            // Download the parameters if missing
+            if (download(config))
             {
-                memorySize = config.getMemorySizeOverride();
-                if (memorySize <= 0)
+                try
                 {
-                    int baseMemorySize = config.getBaseMemorySize();
-                    if (baseMemorySize <= 0)
-                    {
-                        baseMemorySize = 2000;
-                    }
+                    // Open the main app to launch the model
+                    String command = "java -Xmx" +
+                            memorySize + "m -Xms" + memorySize + "m" +
+                            " -cp " + System.getProperty("user.dir") + "/app/target/demo-llm-zoo.jar huplay.demo.AppMain" +
+                            " \"" + arguments.getName() + "\"" +
+                            " -max=" + config.getLengthLimit() +
+                            " -topk=" + config.getTopK();
 
-                    config.setCalculationOnly(true);
-                    TransformerType transformerType = TransformerType.valueOf(config.getTransformerType());
-                    BaseTransformer transformer = transformerType.getTransformer(config);
-
-                    memorySize = baseMemorySize + Math.round((float) transformer.getParameterSize() / 1000 / 1000 * 4);
+                    OUT.println("Command: " + command);
+                    Runtime.getRuntime().exec("cmd /k start cmd /c " + command);
                 }
-            }
-
-            try
-            {
-                String command = "java -Xmx" + memorySize + "m -Xms" + memorySize + "m " +
-                        "-cp " + System.getProperty("user.dir") + "/app/target/demo-llm-zoo.jar huplay.demo.AppMain " +
-                        "\"" + arguments.getName() + "\" -max=" + config.getLengthLimit() + " -topk=" + config.getTopK();
-
-                OUT.println("Command: " + command);
-                Runtime.getRuntime().exec("cmd /k start cmd /c " + command);
-            }
-            catch (IOException e)
-            {
-                OUT.println("Error: " + e.getMessage());
+                catch (IOException e)
+                {
+                    OUT.println("Error: " + e.getMessage());
+                }
             }
         }
     }
@@ -285,6 +278,88 @@ public class AppLoader
         }
 
         return text;
+    }
+
+    private static int determineMemoryRequirement(Config config)
+    {
+        // First, use the requested memory size (if exists)
+        int memorySize = config.getMemorySize();
+        if (memorySize <= 0)
+        {
+            // Second, use the configured total memory size (if exists)
+            memorySize = config.getMemorySizeTotal();
+            if (memorySize <= 0)
+            {
+                // Third, use the configured additional memory size (if exists), or the default 2000M
+                int additionalMemorySize = config.getMemorySizeAdditional();
+                if (additionalMemorySize <= 0)
+                {
+                    additionalMemorySize = 2000;
+                }
+
+                // Calculate the parameter size
+                config.setCalculationOnly(true);
+                TransformerType transformerType = TransformerType.valueOf(config.getTransformerType());
+                BaseTransformer transformer = transformerType.getTransformer(config);
+                int parameterMemorySize = Math.round((float) transformer.getParameterSize() / 1000 / 1000 * 4);
+
+                memorySize = additionalMemorySize + parameterMemorySize;
+            }
+        }
+
+        return memorySize;
+    }
+
+    private static boolean download(Config config) throws IOException, InterruptedException
+    {
+        boolean isOk = true;
+
+        for (String fileName : config.getParameterFiles())
+        {
+            String path = config.getModelPath() + fileName;
+            File file = new File(path);
+
+            if (!file.exists())
+            {
+                isOk = false;
+                OUT.println("Parameter file is missing. (" + fileName + ")");
+                if (config.getParameterRepo() != null)
+                {
+                    OUT.print("Do you want me to download? Repo: " + config.getParameterRepo() + "\nYes or no? ");
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+                    String text = reader.readLine();
+                    OUT.println();
+
+                    if (text.equals("y") || text.equals("Y"))
+                    {
+                        Downloader downloader = new Downloader(config, fileName, path);
+                        Thread thread = new Thread(downloader);
+                        thread.start();
+
+                        int pos = 1;
+                        while (downloader.isInProgress())
+                        {
+                            String progress = "";
+                            for (int i = 1; i <= 25; i++)
+                            {
+                                if (pos == i) progress += "=";
+                                else progress += " ";
+                            }
+
+                            pos++;
+                            if (pos > 25) pos = 1;
+
+                            System.out.print("Downloading |" + progress + "|\r");
+                            Thread.sleep(100);
+                        }
+
+                        isOk = downloader.isOk();
+                    }
+                }
+            }
+        }
+
+        return isOk;
     }
 
     private static int readInt(String value, int defaultValue)

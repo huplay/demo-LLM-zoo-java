@@ -28,15 +28,16 @@ public class Config
     private final int headCount;
     private final float epsilon;
 
-    private final String parameterUrl;
+    private final String parameterRepo;
+    private final String parameterRepoBranch;
     private final List<String> parameterFiles;
     private final String transformerParameterFormat;
     private final String decoderParameterFormat;
     private final Map<String, String> transformerParameterOverrides;
     private final Map<String, String> decoderParameterOverrides;
 
-    private final int memorySizeOverride;
-    private final int baseMemorySize;
+    private final int memorySizeTotal;
+    private final int memorySizeAdditional;
 
     private ParameterReader reader;
 
@@ -61,15 +62,16 @@ public class Config
         this.headCount = getIntProperty(properties, "attention.head.count");
         this.epsilon = getFloatProperty(properties, "epsilon");
 
-        this.parameterUrl = getProperty(properties, "parameter.url", true);
+        this.parameterRepo = getProperty(properties, "parameter.repo", true);
+        this.parameterRepoBranch = getProperty(properties, "parameter.repo.branch", true);
         this.parameterFiles = getParameterFiles(properties);
         this.transformerParameterFormat = properties.get("transformer.parameter.format");
         this.decoderParameterFormat = properties.get("decoder.parameter.format");
         this.transformerParameterOverrides = getParameterOverrides(properties, "transformer.parameter.overrides");
         this.decoderParameterOverrides = getParameterOverrides(properties, "decoder.parameter.overrides");
 
-        this.memorySizeOverride = getIntPropertyOptional(properties, "memory.size.override", 0);
-        this.baseMemorySize = getIntPropertyOptional(properties, "base.memory.size", 0);
+        this.memorySizeTotal = getIntPropertyOptional(properties, "memory.size.total", 0);
+        this.memorySizeAdditional = getIntPropertyOptional(properties, "memory.size.additional", 0);
     }
 
     public boolean isCalculationOnly()
@@ -276,7 +278,7 @@ public class Config
 
     public int getMemorySize()
     {
-        return arguments.getMemorySize();
+        return arguments.getRequestedMemorySize();
     }
 
     public int getTokenCount()
@@ -319,9 +321,14 @@ public class Config
         return epsilon;
     }
 
-    public String getParameterUrl()
+    public String getParameterRepo()
     {
-        return parameterUrl;
+        return parameterRepo;
+    }
+
+    public String getParameterRepoBranch()
+    {
+        return parameterRepoBranch;
     }
 
     public List<String> getParameterFiles()
@@ -364,13 +371,13 @@ public class Config
         this.reader = reader;
     }
 
-    public int getMemorySizeOverride()
+    public int getMemorySizeTotal()
     {
-        return memorySizeOverride;
+        return memorySizeTotal;
     }
 
-    public int getBaseMemorySize()
+    public int getMemorySizeAdditional()
     {
-        return baseMemorySize;
+        return memorySizeAdditional;
     }
 }
