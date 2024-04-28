@@ -6,6 +6,8 @@ The goal is to demonstrate the different decoder-only transformer architectures 
 
 TensorFlow, Pytorch or similar tools are NOT used. The core mathematical utility is implemented in three versions, you can select which one to use.
 
+![screenshot](screenshot.png)
+
 ## Trained parameters ##
 
 The parameter files should be provided in `safetensors` file format, but the app can download these from the configured repository.
