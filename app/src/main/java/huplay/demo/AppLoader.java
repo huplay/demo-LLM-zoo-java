@@ -66,7 +66,7 @@ public class AppLoader
             {
                 String command = "java -Xmx" + memorySize + "m -Xms" + memorySize + "m " +
                         "-cp " + System.getProperty("user.dir") + "/app/target/demo-llm-zoo.jar huplay.demo.AppMain " +
-                        arguments.getName() + " -max=" + config.getLengthLimit() + " -topk=" + config.getTopK();
+                        "\"" + arguments.getName() + "\" -max=" + config.getLengthLimit() + " -topk=" + config.getTopK();
 
                 OUT.println("Command: " + command);
                 Runtime.getRuntime().exec("cmd /k start cmd /c " + command);
@@ -133,7 +133,7 @@ public class AppLoader
                 }
                 else
                 {
-                    name = arg;
+                    name = removeDoubleQuotes(arg);
                 }
             }
         }
@@ -265,6 +265,26 @@ public class AppLoader
     {
         int lastIndex = path.lastIndexOf("/");
         return path.substring(0, lastIndex);
+    }
+
+    private static String removeDoubleQuotes(String text)
+    {
+        if (text == null)
+        {
+            return null;
+        }
+
+        if (text.charAt(0) == '"')
+        {
+            text = text.substring(1);
+        }
+
+        if (text.charAt(text.length() - 1) == '"')
+        {
+            text = text.substring(0, text.length() - 1);
+        }
+
+        return text;
     }
 
     private static int readInt(String value, int defaultValue)
