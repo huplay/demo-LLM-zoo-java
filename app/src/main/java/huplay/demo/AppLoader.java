@@ -7,10 +7,7 @@ import huplay.demo.config.Arguments;
 import huplay.demo.config.Config;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import static huplay.demo.AppMain.displayConfig;
 
@@ -159,12 +156,26 @@ public class AppLoader
             }
 
             // Find directories
-            List<String> directories = new ArrayList<>();
-            for (File file : fileList)
+            Map<Integer, String> directories = new LinkedHashMap<>();
+            int i = 1;
+            int j = -1;
+            int length = 1;
+            for (File file : files)
             {
+                String name = file.getName();
                 if (file.isDirectory())
                 {
-                    directories.add(file.getName());
+                    if (isEnabled(name))
+                    {
+                        directories.put(i, name);
+                        length = String.valueOf(i).length();
+                        i++;
+                    }
+                    else
+                    {
+                        directories.put(j, name);
+                        j--;
+                    }
                 }
             }
 
@@ -178,22 +189,18 @@ public class AppLoader
             {
                 if (!path.equals(configRoot))
                 {
-                    OUT.println("0: ..");
+                    OUT.println(alignRight("0", length) + ": ..");
                 }
 
                 // Display the list of directories
-                int i = 1;
-                for (String directory : directories)
+                for (Map.Entry<Integer, String> entry : directories.entrySet())
                 {
-                    String name = directory;
-                    if (directory.startsWith("("))
-                    {
-                        // Remove the bracketed order from the name
-                        int closing = directory.indexOf(")");
-                        name = directory.substring(closing + 1);
-                    }
+                    Integer key = entry.getKey();
+                    String id = alignRight((key > 0) ? entry.getKey().toString() : "-", length);
 
-                    OUT.println(i + ": " + name);
+                    String displayName = getDisplayName(entry.getValue());
+
+                    OUT.println(id + ": " + displayName);
                     i++;
                 }
 
@@ -240,7 +247,7 @@ public class AppLoader
                 }
                 else
                 {
-                    newPath = path + "/" + directories.get(choice - 1);
+                    newPath = path + "/" + directories.get(choice);
                 }
 
                 OUT.println();
@@ -254,6 +261,40 @@ public class AppLoader
         return null;
     }
 
+    private static boolean isEnabled(String name)
+    {
+        if (name.startsWith("("))
+        {
+            // Remove the bracketed order from the name
+            int closing = name.indexOf(")");
+
+            return closing <= 2 || name.charAt(closing - 2) != '-' || name.charAt(closing - 1) != '-';
+        }
+
+        return true;
+    }
+
+    private static String getDisplayName(String name)
+    {
+        if (name.startsWith("("))
+        {
+            // Remove the bracketed order from the name
+            int closing = name.indexOf(")");
+            if (closing > 0) name = name.substring(closing + 1);
+        }
+
+        return name;
+    }
+
+    private static String alignRight(String text, int length)
+    {
+        if (text.length() >= length) return text;
+
+        char[] pad = new char[length - text.length()];
+        Arrays.fill(pad, ' ');
+        return new String(pad) + text;
+    }
+
     private static String getParentFolder(String path)
     {
         int lastIndex = path.lastIndexOf("/");
@@ -262,21 +303,9 @@ public class AppLoader
 
     private static String removeDoubleQuotes(String text)
     {
-        if (text == null)
-        {
-            return null;
-        }
-
-        if (text.charAt(0) == '"')
-        {
-            text = text.substring(1);
-        }
-
-        if (text.charAt(text.length() - 1) == '"')
-        {
-            text = text.substring(0, text.length() - 1);
-        }
-
+        if (text == null) return null;
+        if (text.charAt(0) == '"') text = text.substring(1);
+        if (text.charAt(text.length() - 1) == '"') text = text.substring(0, text.length() - 1);
         return text;
     }
 
