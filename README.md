@@ -6,7 +6,7 @@ The goal is to demonstrate the different decoder-only transformer architectures 
 
 TensorFlow, Pytorch or similar tools are NOT used. The core mathematical utility is implemented in three versions, you can select which one to use.
 
-![screenshot](screenshot.png)
+<img src="screenshot.png" height="300"/>
 
 ## Trained parameters ##
 
