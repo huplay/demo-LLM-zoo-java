@@ -1,5 +1,7 @@
-package huplay.demo.tokenizer;
+package huplay.demo;
 
+import huplay.demo.tokenizer.GPT2Tokenizer;
+import huplay.demo.tokenizer.Tokenizer;
 import org.junit.Test;
 
 import java.io.File;

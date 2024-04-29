@@ -1,5 +1,6 @@
-package huplay.demo.util;
+package huplay.demo;
 
+import huplay.demo.util.Util;
 import org.junit.Test;
 
 import static org.junit.Assert.assertArrayEquals;
@@ -35,6 +36,21 @@ public class UtilTest
         float[] b = {4, 5, 6, 7};
 
         assertEquals(5*4 + 6*5 + 7*6 + 8*7, UTIL.dotProduct(a, b), 0);
+    }
+
+    @Test
+    public void mulVectorByMatrixTest()
+    {
+        float[] a = {2, 5, 1, 8};
+        float[][] b = {
+                {1, 0, 2, 0},
+                {0, 3, 0, 4},
+                {0, 0, 5, 0},
+                {6, 0, 0, 7}};
+
+        float[] expectedResult = {4, 47, 5, 68};
+
+        assertArrayEquals(expectedResult, UTIL.mulVectorByTransposedMatrix(a, b), 0);
     }
 
     @Test

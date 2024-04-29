@@ -32,7 +32,48 @@ The parameter files should be provided in `safetensors` file format, but the app
 
 Every ported model has a subfolder within the `modelConfig` folder. (Organised in subfolders.) A `model.properties` file describes all details to use the model, or to download it.
 
-It is possible to create a new folder with a new `model.properties` file, and provide the specific details.
+It is possible to create a new folder with a new `model.properties` file, to specify a new model.
+
+Main config:
+- `name`: Name of the model
+- `transformer.type`: Transformer implementation (OPENAI_GPT_2, OPENAI_GPT_2, HUGGING_FACE_BLOOM, ELEUTHERAI_NEO, META_LLAMA)
+- `hidden.size`: Hidden size (embedding size)
+- `feedforward.size`: Size of the feed-forward layer
+- `decoder.count`: Number of decoders
+- `attention.head.count`: Number of heads
+- `epsilon`: Epsilon used by normalisation
+
+Tokenizer config:
+- `tokenizer`: Tokenizer type (GPT-1, GPT-2, SentencePiece, Tiktoken)
+- `tokenizer.config`: Folder name within the `tokenizerConfig` containing the parameters for the tokenizer
+- `token.count`: Number of tokens
+- `end.of.text.token`: Id of the token marking the end of the text (Generation stops on that)
+- `max.length`: Maximum number of tokens to process (context size)
+
+Parameter config:
+- `parameter.repo`: URL of the repo, containing the parameter files (Only Hugging Face is supported)
+- `parameter.repo.branch`: branch name where the parameters are added (if missing: main)
+- `parameter.files`: list of parameter files (must be in `safetensors` format)
+- `transformer.parameter.format`: template for the transformer level parameters, `{name}` is replaced by the string used in code
+- `decoder.parameter.format`: template for the decoder level parameters, `{decoderId}` and `{name}` is replaced
+- `transformer.parameter.overrides`: (Optional) If the actual model has a different parameter name to that string used in the code, you can provide the mapping. (This is a comma separated list, every entry is colon separeted pair. <original name>: <actual name>)
+- `decoder.parameter.overrides`: (Optional) Same as the previous, but for decoder level parameters
+
+## Supported Transformer types ##
+
+The Transformer implementations can be found in the `transformer` package. Path: `app/src/main/java/huplay/demo/transformer`.
+
+Every transformer is implemented via two classes. One is a subclass of the `BaseTransformer`, the second is a subclass of the `BaseDecoder`.
+
+The is no logic in the base classes, these are just helpers to store and access the configuration, the parameters and so on.
+
+There are five transformer implementations at the moment:
+
+- `GPT-1`: The first GPT created by OpenAI, released in June 2018. (Based on the Google's unpublished model, described in the `Attention Is All You Need` paper)
+- `GPT-2`: The second GPT created by OpenAI, limited release in Feb 2019, full access in Nov 2019. Minor differences to GPT-1, only related to the normalization.
+- `GPT-NEO`: First GPT implementation by EleutherAI, released in 2021. Almost the same as GPT-2 and GPT-3, few unimportant differences. 
+- `Bloom`: Created by an open community organised by Hugging Face to create a similar model to GPT-3. Released in March-July 2022. The main difference to GPT-2/GPT-3 is the Alibi position embedding.
+- `Llama`: Created by Meta (Facebook), released in Feb 2023. Currently only the original architecture is supported, but the latest models use Grouped Query Attention. Changes to GPT-2: Rotary position embedding, 3 layered MLP block, Swiglu activation function, RSM normalisation.
 
 ## For developers ##
 
@@ -72,8 +113,9 @@ This is necessary because the Vector API isn't ready (as of Java 20), added only
 ## Additional command line parameters ##
 
 - `-max` - Maximum number of generated tokens (default: 25)
-- `-topk` - Number of possibilities to chose from as next token (default: 40)
+- `-topK` - Number of possibilities to chose from as next token (default: 40)
 - `-calc` - Calculation only (without executing the model, it just displays the parameter size)
+- `-noExit` - The launcher will remain running to be able to open multiple models
 
 Example:
 

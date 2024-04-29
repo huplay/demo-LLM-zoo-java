@@ -1,5 +1,7 @@
-package huplay.demo.tokenizer;
+package huplay.demo;
 
+import huplay.demo.tokenizer.SentencePieceTokenizer;
+import huplay.demo.tokenizer.Tokenizer;
 import org.junit.Test;
 import java.util.Arrays;
 

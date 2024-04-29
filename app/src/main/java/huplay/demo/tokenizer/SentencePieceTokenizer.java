@@ -16,7 +16,7 @@ import java.util.*;
  *
  * @author Hunor Szegi
  */
-final class SentencePieceTokenizer implements Tokenizer
+public final class SentencePieceTokenizer implements Tokenizer
 {
     private static final int START_OF_TEXT = 1;
     private static final String HEX_TOKEN_PREFIX = "<0x";

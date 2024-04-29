@@ -17,52 +17,58 @@ public class AppLoader
     public static final Util UTIL = new Util();
 
     public static final String ARG_CALC = "-calc";
+    public static final String ARG_NO_EXIT = "-noExit";
     public static final String ARG_MAX = "-max";
-    public static final String ARG_TOP_K = "-topk";
+    public static final String ARG_TOP_K = "-topK";
     public static final String ARG_MEM = "-mem";
 
     public static void main(String... args) throws Exception
     {
         logo();
 
-        // Read arguments (possibly asking the user to select the model)
-        Arguments arguments = readArguments(args);
-
-        // Read config of the selected model
-        Config config = new Config(arguments);
-
-        if (config.isCalculationOnly())
+        boolean isContinue = true;
+        while (isContinue)
         {
-            // Calculation only. Display config, parameter size
-            config.setCalculationOnly(true);
-            TransformerType transformerType = TransformerType.valueOf(config.getTransformerType());
-            BaseTransformer transformer = transformerType.getTransformer(config);
-            displayConfig(config, transformer.getParameterSize());
-        }
-        else
-        {
-            // Determine memory requirement
-            int memorySize = determineMemoryRequirement(config);
+            // Read arguments (possibly asking the user to select the model)
+            Arguments arguments = readArguments(args);
+            isContinue = arguments.isNoExit();
 
-            // Download the parameters if missing
-            if (download(config))
+            // Read config of the selected model
+            Config config = new Config(arguments);
+
+            if (config.isCalculationOnly())
             {
-                try
-                {
-                    // Open the main app to launch the model
-                    String command = "java -Xmx" +
-                            memorySize + "m -Xms" + memorySize + "m" +
-                            " -cp " + System.getProperty("user.dir") + "/app/target/demo-llm-zoo.jar huplay.demo.AppMain" +
-                            " \"" + arguments.getName() + "\"" +
-                            " -max=" + config.getLengthLimit() +
-                            " -topk=" + config.getTopK();
+                // Calculation only. Display config, parameter size
+                config.setCalculationOnly(true);
+                TransformerType transformerType = TransformerType.valueOf(config.getTransformerType());
+                BaseTransformer transformer = transformerType.getTransformer(config);
+                displayConfig(config, transformer.getParameterSize());
+            }
+            else
+            {
+                // Determine memory requirement
+                int memorySize = determineMemoryRequirement(config);
 
-                    OUT.println("Command: " + command);
-                    Runtime.getRuntime().exec("cmd /k start cmd /c " + command);
-                }
-                catch (IOException e)
+                // Download the parameters if missing
+                if (download(config))
                 {
-                    OUT.println("Error: " + e.getMessage());
+                    try
+                    {
+                        // Open the main app to launch the model
+                        String command = "java -Xmx" +
+                                memorySize + "m -Xms" + memorySize + "m" +
+                                " -cp " + System.getProperty("user.dir") + "/app/target/demo-llm-zoo.jar huplay.demo.AppMain" +
+                                " \"" + arguments.getName() + "\"" +
+                                " -max=" + config.getLengthLimit() +
+                                " -topK=" + config.getTopK();
+
+                        OUT.println("Command:\n" + command + "\n");
+                        Runtime.getRuntime().exec("cmd /k start cmd /c " + command);
+                    }
+                    catch (IOException e)
+                    {
+                        OUT.println("Error: " + e.getMessage());
+                    }
                 }
             }
         }
@@ -90,6 +96,7 @@ public class AppLoader
         int topK = 40;
         int memorySize = 0;
         boolean isCalculationOnly = false;
+        boolean isNoExit = false;
 
         if (args != null)
         {
@@ -98,7 +105,8 @@ public class AppLoader
             {
                 if (arg.charAt(0) == '-')
                 {
-                    if (arg.equals(ARG_CALC)) isCalculationOnly = true;
+                    if (equals(arg, ARG_CALC)) isCalculationOnly = true;
+                    else if (equals(arg, ARG_NO_EXIT)) isNoExit = true;
                     else
                     {
                         String[] parts = arg.split("=");
@@ -107,9 +115,9 @@ public class AppLoader
                             String key = parts[0];
                             String value = parts[1];
 
-                            if (key.equals(ARG_MAX)) maxLength = readInt(value, maxLength);
-                            else if (key.equals(ARG_TOP_K)) topK = readInt(value, topK);
-                            else if (key.equals(ARG_MEM)) memorySize = readInt(value, 0);
+                            if (equals(key, ARG_MAX)) maxLength = readInt(value, maxLength);
+                            else if (equals(key, ARG_TOP_K)) topK = readInt(value, topK);
+                            else if (equals(key, ARG_MEM)) memorySize = readInt(value, 0);
                         }
                         else
                         {
@@ -134,7 +142,12 @@ public class AppLoader
             name = path.substring(configRoot.length() + 1);
         }
 
-        return new Arguments(name, configRoot, modelRoot, maxLength, topK, isCalculationOnly, memorySize);
+        return new Arguments(name, configRoot, modelRoot, maxLength, topK, isCalculationOnly, isNoExit, memorySize);
+    }
+
+    private static boolean equals(String a, String b)
+    {
+        return a.toLowerCase(Locale.ROOT).equals(b.toLowerCase(Locale.ROOT));
     }
 
     private static String ask(String path, String configRoot) throws IOException
