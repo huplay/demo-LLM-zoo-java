@@ -1,37 +1,57 @@
-package huplay.demo.transformer.eleutherai.gptneo;
+package huplay.demo.transformer._2022_huggingface_bloom;
 
 import huplay.demo.TransformerUtil;
 import huplay.demo.config.Config;
 import huplay.demo.transformer.BaseDecoder;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static huplay.demo.AppLoader.UTIL;
 import static huplay.demo.TransformerUtil.*;
 import static huplay.demo.config.ParameterType.*;
 
-public class NeoDecoder extends BaseDecoder
+public class BloomDecoder extends BaseDecoder
 {
-    private final int maxAttentionSize;
+    private final float[] positionSlope;
 
-    public NeoDecoder(Config config, int decoderId)
+    protected final List<List<float[]>> storedKeys = new ArrayList<>(headCount);
+    protected final List<List<float[]>> storedValues = new ArrayList<>(headCount);
+
+    public BloomDecoder(Config config, int decoderId)
     {
         super(config, decoderId);
 
-        // Load parameters
-        loadVector(ATT_NORM_WEIGHT, "ln_1.weight", hiddenSize);
-        loadVector(ATT_NORM_BIAS, "ln_1.bias", hiddenSize);
-        loadMatrix(ATT_QUERY_WEIGHT, "attn.attention.q_proj.weight", hiddenSize, hiddenSize);
-        loadMatrix(ATT_KEY_WEIGHT, "attn.attention.k_proj.weight", hiddenSize, hiddenSize);
-        loadMatrix(ATT_VALUE_WEIGHT, "attn.attention.v_proj.weight", hiddenSize, hiddenSize);
-        loadMatrix(ATT_PROJ_WEIGHT, "attn.attention.out_proj.weight", hiddenSize, hiddenSize);
-        loadVector(ATT_PROJ_BIAS, "attn.attention.out_proj.bias", hiddenSize);
-        loadVector(MLP_NORM_WEIGHT, "ln_2.weight", hiddenSize);
-        loadVector(MLP_NORM_BIAS, "ln_2.bias", hiddenSize);
-        loadMatrix(MLP_1_WEIGHT, "mlp.c_fc.weight", feedForwardSize, hiddenSize);
-        loadVector(MLP_1_BIAS, "mlp.c_fc.bias", feedForwardSize);
-        loadMatrix(MLP_2_WEIGHT, "mlp.c_proj.weight", hiddenSize, feedForwardSize);
-        loadVector(MLP_2_BIAS, "mlp.c_proj.bias", hiddenSize);
+        for (int i = 0; i < headCount; i++)
+        {
+            storedKeys.add(new ArrayList<>());
+            storedValues.add(new ArrayList<>());
+        }
 
-        maxAttentionSize = 256; // TODO: Move sparse attention to logic, not as config
+        // Load parameters
+        loadVector(ATT_NORM_WEIGHT, "input_layernorm.weight", hiddenSize);
+        loadVector(ATT_NORM_BIAS, "input_layernorm.bias", hiddenSize);
+        loadMatrix(ATT_QUERY_KEY_VALUE_WEIGHT, "self_attention.query_key_value.weight", hiddenSize * 3, hiddenSize);
+        loadVector(ATT_QUERY_KEY_VALUE_BIAS, "self_attention.query_key_value.bias", hiddenSize * 3);
+        loadMatrix(ATT_PROJ_WEIGHT, "self_attention.dense.weight", hiddenSize, hiddenSize);
+        loadVector(ATT_PROJ_BIAS, "self_attention.dense.bias", hiddenSize);
+        loadVector(MLP_NORM_WEIGHT, "post_attention_layernorm.weight", hiddenSize);
+        loadVector(MLP_NORM_BIAS, "post_attention_layernorm.bias", hiddenSize);
+        loadMatrix(MLP_1_WEIGHT, "mlp.dense_h_to_4h.weight", feedForwardSize, hiddenSize);
+        loadVector(MLP_1_BIAS, "mlp.dense_h_to_4h.bias", feedForwardSize);
+        loadMatrix(MLP_2_WEIGHT, "mlp.dense_4h_to_h.weight", hiddenSize, feedForwardSize);
+        loadVector(MLP_2_BIAS, "mlp.dense_4h_to_h.bias", hiddenSize);
+
+        // Calculate the attention dividend
+        attentionDividend = sqrt(headSize);
+
+        // Calculate the slope for the position embedding
+        positionSlope = new float[headCount];
+        float step = 1f / headCount;
+        for (int i = 0; i < headCount; i++)
+        {
+            positionSlope[i] = step * (i + 1);
+        }
     }
 
     public float[] execute(float[] hiddenState, boolean isOutputProcessing)
@@ -78,28 +98,12 @@ public class NeoDecoder extends BaseDecoder
 
     private float[] attention(float[] hiddenState)
     {
-        // Calculate the query, key and value vectors for the actual token
-        float[] query = UTIL.mulVectorByTransposedMatrix(hiddenState, matrix(ATT_QUERY_WEIGHT));
-        float[] key = UTIL.mulVectorByTransposedMatrix(hiddenState, matrix(ATT_KEY_WEIGHT));
-        float[] value = UTIL.mulVectorByTransposedMatrix(hiddenState, matrix(ATT_VALUE_WEIGHT));
+        // Calculate the query-key-value vectors for the actual token
+        float[] queryKeyValue = UTIL.mulVectorByTransposedMatrix(hiddenState, matrix(ATT_QUERY_KEY_VALUE_WEIGHT));
+        queryKeyValue = UTIL.addVectors(queryKeyValue, vector(ATT_QUERY_KEY_VALUE_BIAS));
 
         // Split the query, key and value vectors into pieces for all heads
-        float[][] queryByHead = UTIL.splitVector(query, headCount);
-        float[][] keyByHead = UTIL.splitVector(key, headCount);
-        float[][] valueByHead = UTIL.splitVector(value, headCount);
-
-        // Store the keys and values (these will be available while the following tokens will be processed)
-        storedKeys.add(keyByHead);
-        storedValues.add(valueByHead);
-        int storedSize = storedKeys.size();
-
-        // Used only at sparse attention:
-        /*if (storedSize > maxAttentionSize)
-        {
-            // Topping the maximum attention size we can drop the oldest stored values
-            storedKeys.remove(0);
-            storedValues.remove(0);
-        }*/
+        float[][] queryKeyValuesByHead = UTIL.splitVector(queryKeyValue, headCount);
 
         // Declaration of the variable for collecting the attention results for all heads
         float[][] valueAggregate = new float[headCount][headSize];
@@ -107,15 +111,34 @@ public class NeoDecoder extends BaseDecoder
         // Scoring the previous tokens (including the actual), separately for all heads
         for (int head = 0; head < headCount; head++)
         {
+            float[] queryKeyValueByHead = queryKeyValuesByHead[head];
+
+            // Split the query/key/value
+            float[][] split = UTIL.splitVector(queryKeyValueByHead, 3);
+            float[] queryByHead = split[0];
+            float[] keyByHead = split[1];
+            float[] valueByHead = split[2];
+
+            storedKeys.get(head).add(keyByHead);
+            storedValues.get(head).add(valueByHead);
+
+            // Store the keys and values (these will be available while the following tokens will be processed)
+            int storedSize = storedKeys.get(head).size();
+
             // Calculate the scores
-            float[] actualQuery = queryByHead[head];
             float[] scores = new float[storedSize];
 
             for (int pos = 0; pos < storedSize; pos++)
             {
                 // The score is calculated multiplying the "actual" query vector and the "related" key vector
-                float[] relatedKey = storedKeys.get(pos)[head];
-                scores[pos] = UTIL.dotProduct(actualQuery, relatedKey);
+                float[] relatedKey = storedKeys.get(head).get(pos);
+                float score = UTIL.dotProduct(queryByHead, relatedKey);
+
+                // Position embedding at score
+                score = score - positionSlope[head] * (storedSize - pos - 1);
+
+                // Divide the score by the attention dividend
+                scores[pos] = score / attentionDividend;
             }
 
             // Rescaling the scores to values between 0 and 1
@@ -124,7 +147,7 @@ public class NeoDecoder extends BaseDecoder
             // Multiply the value matrices with the scores, and sum up
             for (int pos = 0; pos < storedSize; pos++)
             {
-                float[] relatedValue = storedValues.get(pos)[head];
+                float[] relatedValue = storedValues.get(head).get(pos);
                 float[] multipliedValue = UTIL.mulVectorByScalar(relatedValue, scores[pos]);
                 valueAggregate[head] = UTIL.addVectors(valueAggregate[head], multipliedValue);
             }

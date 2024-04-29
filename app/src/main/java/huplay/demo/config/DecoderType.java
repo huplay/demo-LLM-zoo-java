@@ -1,12 +1,12 @@
 package huplay.demo.config;
 
 import huplay.demo.transformer.BaseDecoder;
-import huplay.demo.transformer.eleutherai.gptneo.NeoDecoder;
-import huplay.demo.transformer.huggingface.bloom.BloomDecoder;
-import huplay.demo.transformer.meta.llama.LlamaMHADecoder;
-import huplay.demo.transformer.meta.llama.LlamaGQADecoder;
-import huplay.demo.transformer.openai.gpt1.GPT1Decoder;
-import huplay.demo.transformer.openai.gpt2.GPT2Decoder;
+import huplay.demo.transformer._2021_eleuther_gptneo.NeoDecoder;
+import huplay.demo.transformer._2022_huggingface_bloom.BloomDecoder;
+import huplay.demo.transformer._2023_meta_llama.LlamaMHADecoder;
+import huplay.demo.transformer._2023_meta_llama.LlamaGQADecoder;
+import huplay.demo.transformer._2018_openai_gpt1.GPT1Decoder;
+import huplay.demo.transformer._2019_openai_gpt2.GPT2Decoder;
 
 public enum DecoderType
 {

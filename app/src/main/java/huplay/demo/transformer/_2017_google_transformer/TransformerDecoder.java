@@ -1,4 +1,4 @@
-package huplay.demo.transformer.openai.gpt2;
+package huplay.demo.transformer._2017_google_transformer;
 
 import huplay.demo.TransformerUtil;
 import huplay.demo.config.Config;
@@ -8,9 +8,9 @@ import static huplay.demo.AppLoader.UTIL;
 import static huplay.demo.TransformerUtil.*;
 import static huplay.demo.config.ParameterType.*;
 
-public class GPT2Decoder extends BaseDecoder
+public class TransformerDecoder extends BaseDecoder
 {
-    public GPT2Decoder(Config config, int decoderId)
+    public TransformerDecoder(Config config, int decoderId)
     {
         super(config, decoderId);
 
@@ -48,28 +48,28 @@ public class GPT2Decoder extends BaseDecoder
 
     private float[] attentionBlock(float[] inputHiddenState)
     {
-        // Normalisation
-        float[] hiddenState = layerNorm(inputHiddenState, vector(ATT_NORM_WEIGHT), vector(ATT_NORM_BIAS), epsilon);
-
         // Attention
-        hiddenState = attention(hiddenState);
+        float[] hiddenState = attention(inputHiddenState);
 
         // Residual connection
         hiddenState = UTIL.addVectors(inputHiddenState, hiddenState);
+
+        // Normalisation
+        hiddenState = layerNorm(hiddenState, vector(ATT_NORM_WEIGHT), vector(ATT_NORM_BIAS), epsilon);
 
         return hiddenState;
     }
 
     private float[] feedForwardBlock(float[] inputHiddenState)
     {
-        // Normalisation
-        float[] hiddenState = layerNorm(inputHiddenState, vector(MLP_NORM_WEIGHT), vector(MLP_NORM_BIAS), epsilon);
-
         // Neural layers
-        hiddenState = neuralLayers(hiddenState);
+        float[] hiddenState = neuralLayers(inputHiddenState);
 
         // Residual connection
         hiddenState = UTIL.addVectors(inputHiddenState, hiddenState);
+
+        //  Normalisation
+        hiddenState = layerNorm(hiddenState, vector(MLP_NORM_WEIGHT), vector(MLP_NORM_BIAS), epsilon);
 
         return hiddenState;
     }

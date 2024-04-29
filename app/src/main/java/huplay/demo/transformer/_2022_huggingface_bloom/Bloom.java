@@ -1,4 +1,4 @@
-package huplay.demo.transformer.huggingface.bloom;
+package huplay.demo.transformer._2022_huggingface_bloom;
 
 import huplay.demo.config.DecoderType;
 import huplay.demo.config.Config;

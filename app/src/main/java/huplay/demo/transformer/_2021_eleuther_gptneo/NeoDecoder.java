@@ -1,4 +1,4 @@
-package huplay.demo.transformer.meta.llama;
+package huplay.demo.transformer._2021_eleuther_gptneo;
 
 import huplay.demo.TransformerUtil;
 import huplay.demo.config.Config;
@@ -8,27 +8,30 @@ import static huplay.demo.AppLoader.UTIL;
 import static huplay.demo.TransformerUtil.*;
 import static huplay.demo.config.ParameterType.*;
 
-public class LlamaMHADecoder extends BaseDecoder
+public class NeoDecoder extends BaseDecoder
 {
-    public LlamaMHADecoder(Config config, int decoderId)
+    private final int maxAttentionSize;
+
+    public NeoDecoder(Config config, int decoderId)
     {
         super(config, decoderId);
 
         // Load parameters
-        loadVector(ATT_NORM_WEIGHT, "input_layernorm.weight", hiddenSize);
-        loadMatrix(ATT_QUERY_WEIGHT, "self_attn.q_proj.weight", hiddenSize, hiddenSize);
-        loadMatrix(ATT_KEY_WEIGHT, "self_attn.k_proj.weight", hiddenSize, hiddenSize);
-        loadMatrix(ATT_VALUE_WEIGHT, "self_attn.v_proj.weight", hiddenSize, hiddenSize);
-        loadMatrix(ATT_PROJ_WEIGHT, "self_attn.o_proj.weight", hiddenSize, hiddenSize);
-        loadVector(MLP_NORM_WEIGHT, "post_attention_layernorm.weight", hiddenSize);
-        loadMatrix(MLP_1_WEIGHT, "mlp.gate_proj.weight", feedForwardSize, hiddenSize);
-        loadMatrix(MLP_2_WEIGHT, "mlp.up_proj.weight", feedForwardSize, hiddenSize);
-        loadMatrix(MLP_3_WEIGHT, "mlp.down_proj.weight", hiddenSize, feedForwardSize);
+        loadVector(ATT_NORM_WEIGHT, "ln_1.weight", hiddenSize);
+        loadVector(ATT_NORM_BIAS, "ln_1.bias", hiddenSize);
+        loadMatrix(ATT_QUERY_WEIGHT, "attn.attention.q_proj.weight", hiddenSize, hiddenSize);
+        loadMatrix(ATT_KEY_WEIGHT, "attn.attention.k_proj.weight", hiddenSize, hiddenSize);
+        loadMatrix(ATT_VALUE_WEIGHT, "attn.attention.v_proj.weight", hiddenSize, hiddenSize);
+        loadMatrix(ATT_PROJ_WEIGHT, "attn.attention.out_proj.weight", hiddenSize, hiddenSize);
+        loadVector(ATT_PROJ_BIAS, "attn.attention.out_proj.bias", hiddenSize);
+        loadVector(MLP_NORM_WEIGHT, "ln_2.weight", hiddenSize);
+        loadVector(MLP_NORM_BIAS, "ln_2.bias", hiddenSize);
+        loadMatrix(MLP_1_WEIGHT, "mlp.c_fc.weight", feedForwardSize, hiddenSize);
+        loadVector(MLP_1_BIAS, "mlp.c_fc.bias", feedForwardSize);
+        loadMatrix(MLP_2_WEIGHT, "mlp.c_proj.weight", hiddenSize, feedForwardSize);
+        loadVector(MLP_2_BIAS, "mlp.c_proj.bias", hiddenSize);
 
-        loadVectorOptional(ROTARY_EMBEDDING, "self_attn.rotary_emb.inv_freq", headSize / 2);
-
-        // Calculate the attention dividend
-        this.attentionDividend = sqrt(headSize);
+        maxAttentionSize = 256; // TODO: Move sparse attention to logic, not as config
     }
 
     public float[] execute(float[] hiddenState, boolean isOutputProcessing)
@@ -48,13 +51,13 @@ public class LlamaMHADecoder extends BaseDecoder
     private float[] attentionBlock(float[] inputHiddenState)
     {
         // Normalisation
-        float[] hiddenState = RMSLayerNorm(inputHiddenState, vector(ATT_NORM_WEIGHT), epsilon);
+        float[] hiddenState = layerNorm(inputHiddenState, vector(ATT_NORM_WEIGHT), vector(ATT_NORM_BIAS), epsilon);
 
         // Attention
         hiddenState = attention(hiddenState);
 
         // Residual connection
-        hiddenState =  UTIL.addVectors(inputHiddenState, hiddenState);
+        hiddenState = UTIL.addVectors(inputHiddenState, hiddenState);
 
         return hiddenState;
     }
@@ -62,7 +65,7 @@ public class LlamaMHADecoder extends BaseDecoder
     private float[] feedForwardBlock(float[] inputHiddenState)
     {
         // Normalisation
-        float[] hiddenState = RMSLayerNorm(inputHiddenState, vector(MLP_NORM_WEIGHT), epsilon);
+        float[] hiddenState = layerNorm(inputHiddenState, vector(MLP_NORM_WEIGHT), vector(MLP_NORM_BIAS), epsilon);
 
         // Neural layers
         hiddenState = neuralLayers(hiddenState);
@@ -85,43 +88,18 @@ public class LlamaMHADecoder extends BaseDecoder
         float[][] keyByHead = UTIL.splitVector(key, headCount);
         float[][] valueByHead = UTIL.splitVector(value, headCount);
 
-        // Position embedding
-        for (int i = 0; i < hiddenSize; i += 2)
-        {
-            int modulus = i % headSize;
-
-            double frequency;
-            if (vector(ROTARY_EMBEDDING) == null)
-            {
-                // No rotary embedding parameters, do the standard calculation
-                frequency = 1.0 / pow(10000.0f, (float) modulus / headSize);
-            }
-            else
-            {
-                // Use the rotary embedding parameters. TODO: Fix it
-                modulus = i % (headSize/2);
-                frequency = vector(ROTARY_EMBEDDING)[modulus];
-            }
-
-            double degree = frequency * storedKeys.size();
-            float x = cos(degree);
-            float y = sin(degree);
-
-            // Rotate query
-            float query0 = query[i];
-            query[i] = query0 * x - query[i + 1] * y;
-            query[i + 1] = query0 * y - query[i + 1] * x;
-
-            // Rotate key
-            float key0 = key[i];
-            key[i] = key0 * x - key[i + 1] * y;
-            key[i + 1] = key0 * y - key[i + 1] * x;
-        }
-
         // Store the keys and values (these will be available while the following tokens will be processed)
         storedKeys.add(keyByHead);
         storedValues.add(valueByHead);
         int storedSize = storedKeys.size();
+
+        // Used only at sparse attention:
+        /*if (storedSize > maxAttentionSize)
+        {
+            // Topping the maximum attention size we can drop the oldest stored values
+            storedKeys.remove(0);
+            storedValues.remove(0);
+        }*/
 
         // Declaration of the variable for collecting the attention results for all heads
         float[][] valueAggregate = new float[headCount][headSize];
@@ -137,10 +115,7 @@ public class LlamaMHADecoder extends BaseDecoder
             {
                 // The score is calculated multiplying the "actual" query vector and the "related" key vector
                 float[] relatedKey = storedKeys.get(pos)[head];
-                float score = UTIL.dotProduct(actualQuery, relatedKey);
-
-                // Divide the score by the attention dividend
-                scores[pos] = score / attentionDividend;
+                scores[pos] = UTIL.dotProduct(actualQuery, relatedKey);
             }
 
             // Rescaling the scores to values between 0 and 1
@@ -160,30 +135,25 @@ public class LlamaMHADecoder extends BaseDecoder
 
         // Projection neural layer
         hiddenState = UTIL.mulVectorByTransposedMatrix(hiddenState, matrix(ATT_PROJ_WEIGHT));
+        hiddenState = UTIL.addVectors(hiddenState, vector(ATT_PROJ_BIAS));
 
         return hiddenState;
     }
 
     private float[] neuralLayers(float[] hiddenState)
     {
-        // Feed parallel two layers with the same input
-        float[] hiddenState1 = UTIL.mulVectorByTransposedMatrix(hiddenState, matrix(MLP_1_WEIGHT));
-        float[] hiddenState2 = UTIL.mulVectorByTransposedMatrix(hiddenState, matrix(MLP_2_WEIGHT));
+        // Layer 1: <mlpSize> neurons (usually 4 * <hiddenSize>) (using a gelu activation function)
+        hiddenState = UTIL.mulVectorByTransposedMatrix(hiddenState, matrix(MLP_1_WEIGHT));
+        hiddenState = UTIL.addVectors(hiddenState, vector(MLP_1_BIAS));
 
-        // Use SwiGLU activation function on the gate layer (no activation function on the other)
         for (int neuron = 0; neuron < feedForwardSize; neuron++)
         {
-            hiddenState1[neuron] = TransformerUtil.swiglu(hiddenState1[neuron]);
+            hiddenState[neuron] = TransformerUtil.gelu(hiddenState[neuron]);
         }
 
-        // Multiply the two outputs
-        for (int neuron = 0; neuron < feedForwardSize; neuron++)
-        {
-            hiddenState1[neuron] = hiddenState1[neuron] * hiddenState2[neuron];
-        }
-
-        // Use the third layer (no activation function)
-        hiddenState = UTIL.mulVectorByTransposedMatrix(hiddenState1, matrix(MLP_3_WEIGHT));
+        // Layer 2: <hiddenSize> neurons (without activation function)
+        hiddenState = UTIL.mulVectorByTransposedMatrix(hiddenState, matrix(MLP_2_WEIGHT));
+        hiddenState = UTIL.addVectors(hiddenState, vector(MLP_2_BIAS));
 
         return hiddenState;
     }

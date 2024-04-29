@@ -1,4 +1,4 @@
-package huplay.demo.transformer.eleutherai.gptneo;
+package huplay.demo.transformer._2021_eleuther_gptneo;
 
 import huplay.demo.config.DecoderType;
 import huplay.demo.config.Config;

@@ -36,7 +36,7 @@ It is possible to create a new folder with a new `model.properties` file, to spe
 
 Main config:
 - `name`: Name of the model
-- `transformer.type`: Transformer implementation (OPENAI_GPT_2, OPENAI_GPT_2, HUGGING_FACE_BLOOM, ELEUTHERAI_NEO, META_LLAMA)
+- `transformer.type`: Transformer implementation (ORIGINAL_TRANSFORMER / OPENAI_GPT_1 / OPENAI_GPT_2 / HUGGING_FACE_BLOOM / ELEUTHERAI_NEO / META_LLAMA)
 - `hidden.size`: Hidden size (embedding size)
 - `feedforward.size`: Size of the feed-forward layer
 - `decoder.count`: Number of decoders
@@ -67,13 +67,14 @@ Every transformer is implemented via two classes. One is a subclass of the `Base
 
 The is no logic in the base classes, these are just helpers to store and access the configuration, the parameters and so on.
 
-There are five transformer implementations at the moment:
+The following transformer architectures are implemented:
 
-- `GPT-1`: The first GPT created by OpenAI, released in June 2018. (Based on the Google's unpublished model, described in the `Attention Is All You Need` paper)
-- `GPT-2`: The second GPT created by OpenAI, limited release in Feb 2019, full access in Nov 2019. Minor differences to GPT-1, only related to the normalization.
-- `GPT-NEO`: First GPT implementation by EleutherAI, released in 2021. Almost the same as GPT-2 and GPT-3, few unimportant differences. 
-- `Bloom`: Created by an open community organised by Hugging Face to create a similar model to GPT-3. Released in March-July 2022. The main difference to GPT-2/GPT-3 is the Alibi position embedding.
-- `Llama`: Created by Meta (Facebook), released in Feb 2023. Currently only the original architecture is supported, but the latest models use Grouped Query Attention. Changes to GPT-2: Rotary position embedding, 3 layered MLP block, Swiglu activation function, RSM normalisation.
+- `ORIGINAL_TRANSFORMER`: The first transformer, created by Google Brain in 2017. Described in the `Attention Is All You Need` paper. (The trained parameters are not published.)
+- `OPENAI_GPT_1`: The first GPT created by OpenAI, released in June 2018. (Based on the Google's unpublished model, described in the `Attention Is All You Need` paper)
+- `OPENAI_GPT_2`: The second GPT created by OpenAI, limited release in Feb 2019, full access in Nov 2019. Minor differences to GPT-1, only related to the normalization.
+- `ELEUTHERAI_NEO`: First GPT implementation by EleutherAI, released in 2021. Almost the same as GPT-2 and GPT-3, few unimportant differences. 
+- `HUGGING_FACE_BLOOM`: Created by an open community organised by Hugging Face to create a similar model to GPT-3. Released in March-July 2022. The main difference to GPT-2/GPT-3 is the Alibi position embedding.
+- `META_LLAMA`: Created by Meta (Facebook), released in Feb 2023. Currently only the original architecture is supported, but the latest models use Grouped Query Attention. Changes to GPT-2: Rotary position embedding, 3 layered MLP block, Swiglu activation function, RSM normalisation.
 
 ## For developers ##
 

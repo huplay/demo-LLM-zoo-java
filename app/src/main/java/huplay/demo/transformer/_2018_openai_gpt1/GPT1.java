@@ -1,4 +1,4 @@
-package huplay.demo.transformer.openai.gpt1;
+package huplay.demo.transformer._2018_openai_gpt1;
 
 import huplay.demo.config.DecoderType;
 import huplay.demo.config.Config;
@@ -11,17 +11,8 @@ import static huplay.demo.config.ParameterType.*;
 /**
  * OpenAI GPT-1 transformer
  * -
- * Features:
- * - Learned position embedding added to the input at the beginning
- * - Normalization is used at the end of the attention and feed-forward blocks
- * - Residual connections at the attention and feed-forward blocks
- * - Multi-head attention
- * - Score dividend in the attention, which is calculated as sqrt(headSize)
- * - Single layer projection at the end of the attention blocks
- * - Feed-forward block has two layers (layer1: 4 * hiddenSize neurons, layer2: hiddenSize neurons)
- * - GELU activation function (used only at the first feed-forward layer)
- * - 32 bit parameters
- * - query/key/value matrices are stored in a single matrix
+ * Difference to the original transformer:
+ * - Learned position embedding (not sinusoid)
  */
 public class GPT1 extends BaseTransformer
 {
