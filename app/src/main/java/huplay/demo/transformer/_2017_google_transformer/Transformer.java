@@ -24,17 +24,17 @@ import static huplay.demo.config.ParameterType.TOKEN_EMBEDDINGS;
  */
 public class Transformer extends BaseTransformer
 {
-    private final float[][] transformMatrix;
+    private final float[][] positionMatrix;
 
     public Transformer(Config config)
     {
-        super(config, DecoderType.OPENAI_GPT_1);
+        super(config, DecoderType.ORIGINAL_DECODER);
 
         // Load parameters
         loadMatrix(TOKEN_EMBEDDINGS, "tokens_embed.weight", tokenCount, hiddenSize);
 
         // Calculates the sinusoidal transform matrix for the position embedding
-        this.transformMatrix = calculateTransformMatrix(config.getMaxLength(), config.getHiddenSize());
+        this.positionMatrix = calculatePositionMatrix(config.getMaxLength(), config.getHiddenSize());
     }
 
     public float[] execute(int pos, float[] hiddenState, boolean isOutputProcessing)
@@ -42,7 +42,7 @@ public class Transformer extends BaseTransformer
         // Position embedding
         for (int i = 0; i < hiddenState.length; i++)
         {
-            hiddenState[i] = hiddenState[i] * transformMatrix[pos][i];
+            hiddenState[i] = hiddenState[i] * positionMatrix[pos][i];
         }
 
         // Decoder stack
@@ -54,9 +54,9 @@ public class Transformer extends BaseTransformer
         return hiddenState;
     }
 
-    private float[][] calculateTransformMatrix(int maxLength, int hiddenSize)
+    private float[][] calculatePositionMatrix(int maxLength, int hiddenSize)
     {
-        float[][] transformMatrix = new float[maxLength][hiddenSize];
+        float[][] positionMatrix = new float[maxLength][hiddenSize];
 
         float[] positions = new float[maxLength];
         for (int i = 0; i < maxLength; i++)
@@ -75,11 +75,11 @@ public class Transformer extends BaseTransformer
             for (int k = 0; k < hiddenSize / 2; k++)
             {
                 int i = 2 * k;
-                transformMatrix[pos][i] = (float) Math.sin(positions[i] * progression[k]);
-                transformMatrix[pos][i + 1] = (float) Math.sin(positions[i + 1] * progression[k]);
+                positionMatrix[pos][i] = (float) Math.sin(positions[i] * progression[k]);
+                positionMatrix[pos][i + 1] = (float) Math.sin(positions[i + 1] * progression[k]);
             }
         }
 
-        return transformMatrix;
+        return positionMatrix;
     }
 }
