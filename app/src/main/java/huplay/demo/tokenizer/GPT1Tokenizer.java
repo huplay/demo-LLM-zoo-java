@@ -8,7 +8,9 @@ import java.util.regex.Pattern;
 
 /**
  * Tokenizer which is similar to OpenAI's GPT-1 tokenizer (Not fully compatible, but for most cases should work)
- * <a href="https://github.com/huggingface/transformers/blob/v4.27.2/src/transformers/models/openai/tokenization_openai.py#L233">...</a>
+ * https://github.com/huggingface/transformers/blob/v4.27.2/src/transformers/models/openai/tokenization_openai.py
+ *
+ * @author Hunor Szegi
  */
 public class GPT1Tokenizer implements Tokenizer
 {

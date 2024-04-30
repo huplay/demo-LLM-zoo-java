@@ -8,6 +8,8 @@ import java.util.regex.Pattern;
 
 /**
  * Tokenizer which fully compatible with the OpenAI GPT-2 and GPT-3 tokenizer (used for other models as well)
+ *
+ * @author Hunor Szegi
  */
 public class GPT2Tokenizer implements Tokenizer
 {

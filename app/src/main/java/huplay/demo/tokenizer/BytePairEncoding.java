@@ -6,6 +6,8 @@ import java.util.Map;
 
 /**
  * Byte pair encoding
+ *
+ * @author Hunor Szegi
  */
 public class BytePairEncoding
 {

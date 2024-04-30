@@ -10,6 +10,7 @@ import static huplay.demo.AppMain.OUT;
  */
 public class Config
 {
+    private final Map<String, String> properties;
     private boolean isCalculationOnly;
     private final Arguments arguments;
 
@@ -47,31 +48,114 @@ public class Config
         this.isCalculationOnly = arguments.isCalculationOnly();
 
         // Read all properties from the model.properties file
-        Map<String, String> properties = readProperties(getConfigPath() + "model.properties");
-        this.name = getProperty(properties, "name");
-        this.transformerType = getProperty(properties, "transformer.type");
-        this.tokenizer = getProperty(properties, "tokenizer");
-        this.tokenizerConfig = getProperty(properties, "tokenizer.config");
-        this.tokenCount = getIntProperty(properties, "token.count");
-        this.endOfTextToken = getIntProperty(properties, "end.of.text.token");
-        this.maxLength = getIntProperty(properties, "max.length");
+        this.properties = readProperties(getConfigPath() + "model.properties");
+        this.name = getProperty("name");
+        this.transformerType = getProperty("transformer.type");
+        this.tokenizer = getProperty("tokenizer");
+        this.tokenizerConfig = getProperty("tokenizer.config");
+        this.tokenCount = getIntProperty("token.count");
+        this.endOfTextToken = getIntProperty("end.of.text.token");
+        this.maxLength = getIntProperty("max.length");
 
-        this.hiddenSize = getIntProperty(properties, "hidden.size");
-        this.feedForwardSize = getIntProperty(properties, "feedforward.size");
-        this.decoderCount = getIntProperty(properties, "decoder.count");
-        this.headCount = getIntProperty(properties, "attention.head.count");
-        this.epsilon = getFloatProperty(properties, "epsilon");
+        this.hiddenSize = getIntProperty("hidden.size");
+        this.feedForwardSize = getIntProperty("feedforward.size");
+        this.decoderCount = getIntProperty("decoder.count");
+        this.headCount = getIntProperty("attention.head.count");
+        this.epsilon = getFloatProperty("epsilon");
 
-        this.parameterRepo = getProperty(properties, "parameter.repo", true);
-        this.parameterRepoBranch = getProperty(properties, "parameter.repo.branch", true);
-        this.parameterFiles = getParameterFiles(properties);
+        this.parameterRepo = getProperty("parameter.repo", true);
+        this.parameterRepoBranch = getProperty("parameter.repo.branch", true);
+        this.parameterFiles = readParameterFiles();
         this.transformerParameterFormat = properties.get("transformer.parameter.format");
         this.decoderParameterFormat = properties.get("decoder.parameter.format");
-        this.transformerParameterOverrides = getParameterOverrides(properties, "transformer.parameter.overrides");
-        this.decoderParameterOverrides = getParameterOverrides(properties, "decoder.parameter.overrides");
+        this.transformerParameterOverrides = readParameterOverrides("transformer.parameter.overrides");
+        this.decoderParameterOverrides = readParameterOverrides("decoder.parameter.overrides");
 
-        this.memorySizeTotal = getIntPropertyOptional(properties, "memory.size.total", 0);
-        this.memorySizeAdditional = getIntPropertyOptional(properties, "memory.size.additional", 0);
+        this.memorySizeTotal = getIntPropertyOptional("memory.size.total", 0);
+        this.memorySizeAdditional = getIntPropertyOptional("memory.size.additional", 0);
+    }
+
+    public int getIntProperty(String key)
+    {
+        try
+        {
+            return toInt(getProperty(key));
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException("Cannot read integer property: " + key + " exception: " + e.getMessage());
+        }
+    }
+
+    public int getIntPropertyOptional(String key, int defaultValue)
+    {
+        try
+        {
+            String property = getProperty(key, true);
+            return property == null ? defaultValue : toInt(property);
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException("Cannot read integer property: " + key + " exception: " + e.getMessage());
+        }
+    }
+
+    public float getFloatProperty(String key)
+    {
+        try
+        {
+            return toFloat(getProperty(key));
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException("Cannot read float property: " + key + " exception: " + e.getMessage());
+        }
+    }
+
+    public float getFloatPropertyOptional(String key, float defaultValue) throws Exception
+    {
+        try
+        {
+            String property = getProperty(key, true);
+            return property == null ? defaultValue : toFloat(property);
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException("Cannot read float property: " + key + " exception: " + e.getMessage());
+        }
+    }
+
+    public String getProperty(String key)
+    {
+        return getProperty(key, false);
+    }
+
+    public String getPropertyOptional(String key, String defaultValue)
+    {
+        String property = getProperty(key, true);
+        return property == null ? defaultValue : property;
+    }
+
+    private String getProperty(String key, boolean isOptional)
+    {
+        String value = properties.get(key);
+
+        if (value != null)
+        {
+            value = value.trim();
+        }
+
+        if ( ! isOptional && (value == null || value.equals("")))
+        {
+            throw new RuntimeException("Missing entry in the model.properties file: '" + key + "'.");
+        }
+
+        if (value != null && value.equals(""))
+        {
+            value = null;
+        }
+
+        return value;
     }
 
     public boolean isCalculationOnly()
@@ -84,14 +168,14 @@ public class Config
         isCalculationOnly = calculationOnly;
     }
 
-    private List<String> getParameterFiles(Map<String, String> properties) throws Exception
+    private List<String> readParameterFiles()
     {
-        return splitProperty(getProperty(properties, "parameter.files"));
+        return splitProperty(getProperty("parameter.files"));
     }
 
-    private Map<String, String> getParameterOverrides(Map<String, String> properties, String name) throws Exception
+    private Map<String, String> readParameterOverrides(String name)
     {
-        String property = getProperty(properties, name, true);
+        String property = getProperty(name, true);
 
         if (property == null || property.isEmpty())
         {
@@ -125,7 +209,7 @@ public class Config
         return result;
     }
 
-    public static Map<String, String> readProperties(String fileName) throws Exception
+    private static Map<String, String> readProperties(String fileName) throws Exception
     {
         Map<String, String> properties = new HashMap<>();
 
@@ -133,24 +217,7 @@ public class Config
         {
             while (scanner.hasNextLine())
             {
-                String line = scanner.nextLine();
-                if (line != null && !line.trim().isEmpty() && !line.startsWith("#"))
-                {
-                    String[] parts = line.split("=");
-                    if (parts.length == 1)
-                    {
-                        properties.put(parts[0].trim(), "");
-                    }
-                    else if (parts.length > 1)
-                    {
-                        properties.put(parts[0].trim(), parts[1].trim());
-
-                        if (parts.length > 2)
-                        {
-                            OUT.println("\nWARNING: Additional \"=\" character in value: (" + fileName + "): " + line);
-                        }
-                    }
-                }
+                addProperty(scanner.nextLine(), properties);
             }
         }
         catch (IOException e)
@@ -161,55 +228,32 @@ public class Config
         return properties;
     }
 
-    private int getIntProperty(Map<String, String> properties, String key) throws Exception
+    public static void addProperty(String line, Map<String, String> properties)
     {
-        return toInt(getProperty(properties, key));
-    }
-
-    private int getIntPropertyOptional(Map<String, String> properties, String key, int defaultValue) throws Exception
-    {
-        String property = getProperty(properties, key, true);
-
-        if (property == null)
+        if (line != null && !line.trim().equals("") && !line.startsWith("#"))
         {
-            return defaultValue;
+            String trimmedLine = line.trim();
+            int index = trimmedLine.indexOf('=');
+            if (index > 0)
+            {
+                String key = trimmedLine.substring(0, index).trim();
+                String value = trimmedLine.substring(index + 1).trim();
+
+                if (!key.equals("") && !value.equals(""))
+                {
+                    properties.put(key, value);
+                }
+
+                if (key.equals("") && !value.equals(""))
+                {
+                    OUT.println("\nWARNING: Incorrectly formed line found in the properties file: \"" + line + "\"");
+                }
+            }
+            else
+            {
+                OUT.println("\nWARNING: Incorrectly formed line found in the properties file: \"" + line + "\"");
+            }
         }
-        else
-        {
-            return toInt(property);
-        }
-    }
-
-    private float getFloatProperty(Map<String, String> properties, String key) throws Exception
-    {
-        return toFloat(getProperty(properties, key));
-    }
-
-    private String getProperty(Map<String, String> properties, String key) throws Exception
-    {
-        return getProperty(properties, key, false);
-    }
-
-    private String getProperty(Map<String, String> properties, String key, boolean isOptional) throws Exception
-    {
-        String value = properties.get(key);
-
-        if (value != null)
-        {
-            value = value.trim();
-        }
-
-        if ( ! isOptional && (value == null || value.equals("")))
-        {
-            throw new Exception("Missing entry in the model.properties file: '" + key + "'.");
-        }
-
-        if (value != null && value.equals(""))
-        {
-            value = null;
-        }
-
-        return value;
     }
 
     private int toInt(String value) throws Exception
