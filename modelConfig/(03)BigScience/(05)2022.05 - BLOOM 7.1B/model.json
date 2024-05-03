@@ -1,0 +1,9 @@
+{
+  "name": "BLOOM 7.1B",
+  "transformerType": "BIG_SCIENCE_BLOOM",
+  "tokenizerType": "OPENAI_GPT_2",
+  "repo": "https://huggingface.co/bigscience/bloom-7b1",
+  "files": ["config.json", "tokenizer.json", "model-00001-of-00002.safetensors", "model-00002-of-00002.safetensors"],
+  "decoderParameterNameFormat": "h.{decoderId}.{name}",
+  "memorySize": 819200
+}

@@ -1,6 +1,6 @@
 package huplay.demo;
 
-import huplay.demo.config.Config;
+import huplay.demo.config.ModelConfig;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -11,16 +11,16 @@ import java.nio.channels.ReadableByteChannel;
 
 public class Downloader implements Runnable
 {
-    private final Config config;
+    private final ModelConfig modelConfig;
     private final String fileName;
     private final String path;
 
     private boolean isInProgress = true;
     private boolean isOk = true;
 
-    public Downloader(Config config, String fileName, String path)
+    public Downloader(ModelConfig modelConfig, String fileName, String path)
     {
-        this.config = config;
+        this.modelConfig = modelConfig;
         this.fileName = fileName;
         this.path = path;
     }
@@ -28,32 +28,33 @@ public class Downloader implements Runnable
     @Override
     public void run()
     {
-        try (FileOutputStream outputStream = new FileOutputStream(path))
+        try (FileOutputStream outputStream = new FileOutputStream(path + "/" + fileName))
         {
-            URL url = new URL(determineDownloadUrl(config, fileName));
+            URL url = new URL(determineDownloadUrl(modelConfig, fileName));
 
             ReadableByteChannel urlChannel = Channels.newChannel(url.openStream());
             FileChannel fileChannel = outputStream.getChannel();
+
             fileChannel.transferFrom(urlChannel, 0, Long.MAX_VALUE);
         }
         catch (IOException e)
         {
             isOk = false;
-            throw new RuntimeException(e);
+            throw new RuntimeException("IO error during file download: " + fileName + " error: " + e);
         }
 
         isInProgress = false;
     }
 
-    private String determineDownloadUrl(Config config, String fileName)
+    private String determineDownloadUrl(ModelConfig modelConfig, String fileName)
     {
-        String repoUrl = config.getParameterRepo();
+        String repoUrl = modelConfig.getRepo();
 
         if (repoUrl.startsWith("https://huggingface.co/"))
         {
-            String branch = config.getParameterRepoBranch();
+            String branch = modelConfig.getBranch();
 
-            if (branch == null)
+            if (branch == null || branch.equals(""))
             {
                 branch = "main";
             }

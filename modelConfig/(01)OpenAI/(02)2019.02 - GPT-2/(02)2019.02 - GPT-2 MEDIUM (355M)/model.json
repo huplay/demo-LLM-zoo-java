@@ -1,0 +1,11 @@
+{
+  "name": "OpenAI GPT-2 Medium",
+  "transformerType": "OPENAI_GPT_2",
+  "tokenizerType": "OPENAI_GPT_2",
+  "configFile" : "config.json",
+  "repo": "https://huggingface.co/openai-community/gpt2-medium",
+  "--originalRepo--": "https://github.com/openai/gpt-2-output-dataset",
+  "files": ["config.json", "vocab.json", "merges.txt", "model.safetensors"],
+  "decoderParameterNameFormat": "h.{decoderId}.{name}",
+  "memorySize": 2048
+}

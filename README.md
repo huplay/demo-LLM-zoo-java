@@ -116,7 +116,6 @@ This is necessary because the Vector API isn't ready (as of Java 20), added only
 - `-max` - Maximum number of generated tokens (default: 25)
 - `-topK` - Number of possibilities to chose from as next token (default: 40)
 - `-calc` - Calculation only (without executing the model, it just displays the parameter size)
-- `-noExit` - The launcher will remain running to be able to open multiple models
 
 Example:
 

@@ -28,7 +28,7 @@ public class LlamaDecoder extends BaseDecoder
         // Read the optional config for the "key/value head" count
         // (At the original attention (MHA) there was only a single kind of head. Call it "query head" from now on.)
         // If the "query head" is different to the "key/value head" count, we are using Grouped Query Attention (GQA)
-        kvHeadCount = config.getIntPropertyOptional("attention.kv.head.count", headCount);
+        kvHeadCount = config.getIntOptional("attention.kv.head.count", headCount);
         kvHeadSize = headCount / kvHeadCount;
         loadMatrix(ATT_KEY_WEIGHT, "self_attn.k_proj.weight", hiddenSize, hiddenSize / kvHeadSize);
         loadMatrix(ATT_VALUE_WEIGHT, "self_attn.v_proj.weight", hiddenSize, hiddenSize / kvHeadSize);
@@ -39,8 +39,6 @@ public class LlamaDecoder extends BaseDecoder
         loadMatrix(MLP_1_WEIGHT, "mlp.gate_proj.weight", feedForwardSize, hiddenSize);
         loadMatrix(MLP_2_WEIGHT, "mlp.up_proj.weight", feedForwardSize, hiddenSize);
         loadMatrix(MLP_3_WEIGHT, "mlp.down_proj.weight", hiddenSize, feedForwardSize);
-
-        loadVectorOptional(ROTARY_EMBEDDING, "self_attn.rotary_emb.inv_freq", headSize / 2);
 
         // Calculate the attention dividend
         this.attentionDividend = sqrt(headSize);
@@ -163,19 +161,7 @@ public class LlamaDecoder extends BaseDecoder
         {
             int modulus = i % headSize;
 
-            double frequency;
-            if (vector(ROTARY_EMBEDDING) == null)
-            {
-                // No rotary embedding parameters, do the standard calculation
-                frequency = 1.0 / pow(10000.0f, (float) modulus / headSize);
-            }
-            else
-            {
-                // Use the rotary embedding parameters. TODO: Fix it
-                modulus = i % (headSize/2);
-                frequency = vector(ROTARY_EMBEDDING)[modulus];
-            }
-
+            double frequency = 1.0 / pow(10000.0f, (float) modulus / headSize);
             double degree = frequency * storedKeys.size();
             float x = cos(degree);
             float y = sin(degree);
@@ -263,19 +249,7 @@ public class LlamaDecoder extends BaseDecoder
         {
             int modulus = i % headSize;
 
-            double frequency;
-            if (vector(ROTARY_EMBEDDING) == null)
-            {
-                // No rotary embedding parameters, do the standard calculation
-                frequency = 1.0 / pow(10000.0f, (float) modulus / headSize);
-            }
-            else
-            {
-                // Use the rotary embedding parameters. TODO: Fix it
-                modulus = i % (headSize/2);
-                frequency = vector(ROTARY_EMBEDDING)[modulus];
-            }
-
+            double frequency = 1.0 / pow(10000.0f, (float) modulus / headSize);
             double degree = frequency * storedKeys.size();
             float x = cos(degree);
             float y = sin(degree);

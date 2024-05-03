@@ -6,12 +6,6 @@ https://bigscience.huggingface.co/
 
 Publication: https://arxiv.org/abs/2211.05100
 
-These models have the following specialities:
-- Larger vocabulary size, slightly different tokenizer, using 250,680 tokens (+200 values in word token embedding matrix)
-- `ALiBi` position embedding
-- Additional normalization after the input embedding step
-- 16-bit data type, which is half of the usual 32-bit (The largest model uses `BFLOAT16`, the others `FLOAT16` storage)
-
 | Name       | Hidden size | Dec. no. | Head no. | Max. length | Size of params |
 |------------|------------:|---------:|---------:|------------:|---------------:|
 | BLOOM-560M |        1024 |       24 |       16 |        2048 |          559 M | 
@@ -30,11 +24,6 @@ Finally, they opted to use the BFLOAT16 data type, which is also 16-bit format, 
 The BLOOM-176B model was trained using this data type, while the potentially unnecessary input normalization remained in use. 
 
 The models were uploaded to the `Hugging Face` portal where you can find the links for all models: https://huggingface.co/docs/transformers/model_doc/bloom
-
-You have to download only the `pytorch_model.bin` file. (This is a `PKZIP` file, just you have to rename it to `.zip` to make it obvious.)
-You have to extract the files under the `archive/data` folder into the `parameters` folder.
-
-(The mapping was created using the info in the `archive/data.pkl` pickle file.)
 
 ## BLOOMZ ##
 

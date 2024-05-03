@@ -20,7 +20,7 @@ public abstract class BaseDecoder extends ParameterStore
 
     public BaseDecoder(Config config, int decoderId)
     {
-        super(config, config.getDecoderParameterFormat(), config.getDecoderParameterOverrides());
+        super(config);
         this.decoderId = decoderId;
         this.hiddenSize = config.getHiddenSize();
         this.headCount = config.getHeadCount();
@@ -45,18 +45,18 @@ public abstract class BaseDecoder extends ParameterStore
     }
 
     @Override
-    protected String formatName(String file)
+    protected String formatName(String name)
     {
-        if (parameterOverrides != null)
+        if (config.getParameterNameOverrides() != null)
         {
-            String override = parameterOverrides.get(file);
+            String override = config.getParameterNameOverrides().get(name);
             if (override != null)
             {
-                file = override;
+                name = override;
             }
         }
 
-        String formattedName = parameterFormat.replace("{decoderId}", "" + decoderId);
-        return formattedName.replace("{name}", file);
+        String formattedName = config.getDecoderParameterNameFormat().replace("{decoderId}", "" + decoderId);
+        return formattedName.replace("{name}", name);
     }
 }

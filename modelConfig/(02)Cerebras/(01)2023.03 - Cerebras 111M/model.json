@@ -1,0 +1,10 @@
+{
+  "name": "Cerebras 111M",
+  "transformerType": "OPENAI_GPT_2",
+  "tokenizerType": "OPENAI_GPT_2",
+  "repo": "https://huggingface.co/cerebras/Cerebras-GPT-111M",
+  "files": ["config.json", "vocab.json", "merges.txt", "model.safetensors"],
+  "transformerParameterNameFormat": "transformer.{name}",
+  "decoderParameterNameFormat": "transformer.h.{decoderId}.{name}",
+  "memorySize": 1024
+}

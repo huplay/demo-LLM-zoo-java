@@ -4,7 +4,7 @@
 
 ---
 
-Uses Rotary Position Embedding (RoPE), which isn't implemented here, so this model doesn't work atm.
+Uses Rotary Position Embedding (RoPE)
 
 Publication: https://arxiv.org/abs/2104.09864 (20 Apr 2021, Jianlin Su et al.)
 
@@ -22,11 +22,8 @@ Hugging Face documentation (RoFormer): https://huggingface.co/docs/transformers/
 
 Source of the parameters: https://huggingface.co/EleutherAI/gpt-j-6B
 
-Download and unzip the content of the following file to the `parameters` folder: https://huggingface.co/EleutherAI/gpt-j-6B/blob/main/pytorch_model.bin
 
-This `pytorch_model.bin` file is a standard PK ZIP file. Possibly you have to rename it to `.zip` and extract the files under the `archive/data` folder.
+# It seems the mlp normalization weights and biases are common, at least there's no such files for every decoder.
 
-You will find files named starting from 0 to 284 which is mapped to the standard format in the `model.properties` file.
-(The mapping was created using the info in the `archive/data.pkl` pickle file.)
 
 

@@ -1,5 +1,6 @@
 package huplay.demo.config;
 
+import huplay.demo.IdentifiedException;
 import huplay.demo.transformer.BaseTransformer;
 import huplay.demo.transformer._2018_01_google_transformer.Transformer;
 import huplay.demo.transformer._2021_03_eleuther_gptneo.GPTNeo;
@@ -17,9 +18,15 @@ public enum TransformerType
     BIG_SCIENCE_BLOOM,
     META_LLAMA;
 
-    public BaseTransformer getTransformer(Config config)
+    public static BaseTransformer getTransformer(Config config)
     {
-        switch (this)
+        if (config.getTransformerType() == null)
+        {
+            throw new IdentifiedException("Transformer type isn't specified");
+        }
+
+        TransformerType transformerType = TransformerType.valueOf(config.getTransformerType().toUpperCase());
+        switch (transformerType)
         {
             case ORIGINAL_TRANSFORMER: return new Transformer(config);
             case OPENAI_GPT_1: return new GPT1(config);
@@ -28,7 +35,7 @@ public enum TransformerType
             case BIG_SCIENCE_BLOOM: return new Bloom(config);
             case META_LLAMA: return new Llama(config);
             default:
-                throw new RuntimeException("Unknown transformer type: " + config.getTransformerType());
+                throw new IdentifiedException("Unknown transformer type: " + config.getTransformerType());
         }
     }
 }

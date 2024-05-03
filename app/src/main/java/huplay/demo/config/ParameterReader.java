@@ -1,5 +1,7 @@
 package huplay.demo.config;
 
+import huplay.demo.IdentifiedException;
+
 import java.io.*;
 import java.nio.*;
 import java.nio.channels.FileChannel;
@@ -28,15 +30,26 @@ public class ParameterReader
         this.config = config;
 
         // Read the header(s) of the safetensors parameter file(s)
-        for (String fileName : config.getParameterFiles())
+        File modelFolder = new File(config.getModelPath());
+
+        if (modelFolder == null || !modelFolder.isDirectory())
         {
-            readDescriptor(fileName);
+            throw new IdentifiedException("Model folder not found: " + config.getModelPath());
+        }
+
+
+        for (File file : modelFolder.listFiles())
+        {
+            if (file.isFile() && file.getName().endsWith("safetensors"))
+            {
+                readDescriptor(file.getName());
+            }
         }
     }
 
     private void readDescriptor(String fileName)
     {
-        fileName = config.getModelPath() + fileName;
+        fileName = config.getModelPath() + "/" + fileName;
 
         long headerSize = readHeaderSize(fileName);
         String header = readHeader(fileName, headerSize);
@@ -92,7 +105,7 @@ public class ParameterReader
 
             if (offsets == null || offsets.length != 2)
             {
-                throw new RuntimeException("Parameter file read error. (" + id + ")");
+                throw new IdentifiedException("Parameter file read error. (" + id + ")");
             }
 
             ParameterDescriptor descriptor = new ParameterDescriptor(fileName, id, headerSize + 8, format,
@@ -191,7 +204,7 @@ public class ParameterReader
         }
         catch (Exception e)
         {
-            throw new RuntimeException("Parameter file read error. (" + fileName + ")");
+            throw new IdentifiedException("Parameter file read error. (" + fileName + ")", e);
         }
 
         return array[0];
@@ -212,7 +225,7 @@ public class ParameterReader
         }
         catch (Exception e)
         {
-            throw new RuntimeException("Parameter file read error. (" + fileName + ")");
+            throw new IdentifiedException("Parameter file read error. (" + fileName + ")", e);
         }
 
         return new String(array, StandardCharsets.UTF_8);
@@ -245,7 +258,7 @@ public class ParameterReader
         long parameterSize = descriptor.getSizeInBytes() * 8 / descriptor.getDataType().getBits();
         if (parameterSize != expectedSize)
         {
-            throw new RuntimeException("The file has different size (" + parameterSize + ") " +
+            throw new IdentifiedException("The file has different size (" + parameterSize + ") " +
                     "to the expected (" + expectedSize + "). Id: " + descriptor.getId());
         }
     }
@@ -262,7 +275,7 @@ public class ParameterReader
             }
             else
             {
-                throw new RuntimeException("Descriptor not found for key: " + id);
+                throw new IdentifiedException("Descriptor not found for key: " + id);
             }
         }
 
@@ -279,7 +292,7 @@ public class ParameterReader
                 case BF16: return readBrainFloat16(stream, size, offset);
                 case F32: return readFloat32(stream, size, offset);
                 default:
-                    throw new RuntimeException("Not supported data type: " + descriptor.getDataType() + ", key: " + id);
+                    throw new IdentifiedException("Not supported data type: " + descriptor.getDataType() + ", key: " + id);
             }
         }
         catch (IOException e)

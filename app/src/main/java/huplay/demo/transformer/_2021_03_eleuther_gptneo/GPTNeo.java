@@ -29,7 +29,7 @@ public class GPTNeo extends BaseTransformer
 
         // Load parameters
         loadMatrix(TOKEN_EMBEDDINGS, "wte.weight", tokenCount, hiddenSize);
-        loadMatrix(POSITION_EMBEDDINGS, "wpe.weight", maxLength, hiddenSize);
+        loadMatrix(POSITION_EMBEDDINGS, "wpe.weight", contextSize, hiddenSize);
         loadVector(OUTPUT_NORM_WEIGHT, "ln_f.weight", hiddenSize);
         loadVector(OUTPUT_NORM_BIAS, "ln_f.bias", hiddenSize);
     }

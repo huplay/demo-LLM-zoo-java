@@ -1,64 +1,20 @@
 package huplay.demo.tokenizer;
 
+import huplay.demo.IdentifiedException;
+
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Scanner;
 
 public class FileReader
 {
-    public static void readTokensFile(String fileName, Map<String, Integer> tokenEncoding,
-                                      Map<Integer, String> tokenDecoding)
-    {
-        try (Scanner scanner = new Scanner(new File(fileName)))
-        {
-            while (scanner.hasNext())
-            {
-                String first = scanner.next();
-
-                if (first.startsWith("{")) first = first.substring(1);
-                if (first.startsWith("\"")) first = first.substring(1);
-                if (first.endsWith(":")) first = first.substring(0, first.length() - 1);
-                if (first.endsWith("\"")) first = first.substring(0, first.length() - 1);
-
-                first = first.replace("\\\"", "\"");
-                first = first.replace("\\'", "'");
-                first = first.replace("\\\\", "\\");
-
-                while (true)
-                {
-                    int i = first.indexOf("\\u");
-                    if (i == -1) break;
-
-                    String hex = first.substring(i + 2, i + 6);
-                    first = first.replace("\\u" + hex, "" + (char)Integer.parseInt(hex, 16));
-                }
-
-                String second = scanner.next();
-
-                if (second.endsWith(",")) second = second.substring(0, second.length() - 1);
-                if (second.endsWith("}")) second = second.substring(0, second.length() - 1);
-
-                int value = Integer.parseInt(second);
-
-                tokenDecoding.put(value, first);
-                tokenEncoding.put(first, value);
-            }
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException("Cannot read tokens file: " + fileName);
-        }
-    }
-
-    public static Map<Pair, Integer> readMergesFile(String fileName, boolean isOmitFirstLine)
+    public static Map<Pair, Integer> readMergesFile(File file, boolean isOmitFirstLine)
     {
         Map<Pair, Integer> merges = new HashMap<>(50000);
 
         try
         {
-            File file = new File(fileName);
             FileInputStream inputStream = new FileInputStream(file);
             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
 
@@ -81,7 +37,7 @@ public class FileReader
         }
         catch (IOException e)
         {
-            throw new RuntimeException("Cannot read merges file: " + fileName);
+            throw new IdentifiedException("Cannot read merges file: " + file.getName(), e);
         }
 
         return merges;

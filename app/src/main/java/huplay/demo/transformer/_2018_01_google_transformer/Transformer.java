@@ -64,21 +64,21 @@ public class Transformer extends BaseTransformer
 
     private float[][] calculatePositionMatrix()
     {
-        float[][] positionMatrix = new float[maxLength][hiddenSize];
+        float[][] positionMatrix = new float[contextSize][hiddenSize];
 
-        float[] positions = new float[maxLength];
-        for (int i = 0; i < maxLength; i++)
+        float[] positions = new float[contextSize];
+        for (int i = 0; i < contextSize; i++)
         {
             positions[i] = i;
         }
 
-        float[] progression = new float[maxLength / 2];
-        for (int i = 0; i < maxLength / 2; i++)
+        float[] progression = new float[contextSize / 2];
+        for (int i = 0; i < contextSize / 2; i++)
         {
-            progression[i] = (float) Math.exp(-i * Math.log(10000) / maxLength);
+            progression[i] = (float) Math.exp(-i * Math.log(10000) / contextSize);
         }
 
-        for (int pos = 0; pos < maxLength; pos++)
+        for (int pos = 0; pos < contextSize; pos++)
         {
             for (int k = 0; k < hiddenSize / 2; k++)
             {

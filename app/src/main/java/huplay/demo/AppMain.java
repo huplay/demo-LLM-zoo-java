@@ -1,49 +1,78 @@
 package huplay.demo;
 
-import huplay.demo.config.Arguments;
-import huplay.demo.config.Config;
-import huplay.demo.config.ParameterReader;
-import huplay.demo.config.TransformerType;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import huplay.demo.config.*;
 import huplay.demo.tokenizer.Tokenizer;
 import huplay.demo.transformer.BaseTransformer;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintStream;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static huplay.demo.AppLoader.*;
+import static huplay.demo.AppLoader.checkFiles;
+import static huplay.demo.AppLoader.logo;
 
 public class AppMain
 {
     public static final PrintStream OUT = getPrintStream();
+    private static final ObjectMapper objectMapper = new ObjectMapper();
 
-    public static void main(String... args) throws Exception
+    public static void main(String... args)
     {
-        logo();
+        try
+        {
+            logo();
+            new AppMain().start(args);
+        }
+        catch (IdentifiedException e)
+        {
+            OUT.println("ERROR: " + e.getMessage());
+        }
+        catch (Throwable e)
+        {
+            StackTraceElement[] stackTraceElements = e.getStackTrace();
+            if (stackTraceElements != null)
+            {
+                for (StackTraceElement element : stackTraceElements)
+                {
+                    OUT.println(element.toString());
+                }
+            }
+            OUT.println("ERROR: " + e.getMessage() + " " + e.getStackTrace());
+        }
+    }
 
-        Arguments arguments = readArguments(args);
-        Config config = new Config(arguments);
+    private void start(String... args) throws Exception
+    {
+        // Read arguments
+        Arguments arguments = Arguments.readArguments(args);
+
+        // Read the modelConfig of the selected model
+        ModelConfig modelConfig = ModelConfig.read(arguments, objectMapper);
+
+        // Check necessary files
+        List<String> missingFiles = checkFiles(modelConfig, arguments.getModelPath());
+        if (missingFiles.size() > 0)
+        {
+            throw new IdentifiedException("There are missing files: " + missingFiles);
+        }
+
+        // Read the config (first look into the model folder, second to the config folder (maybe it's different)
+        Config config = Config.read(arguments, modelConfig, objectMapper);
 
         displayConfig(config, 0);
 
         OUT.print("\nLoading parameters... ");
-        ParameterReader reader = new ParameterReader(config);
-        config.setReader(reader);
-
-        TransformerType transformerType = TransformerType.valueOf(config.getTransformerType());
-        BaseTransformer transformer = transformerType.getTransformer(config);
+        BaseTransformer transformer = TransformerType.getTransformer(config);
 
         OUT.println("Done.");
-        OUT.println("Parameter size:  " + Math.round((float) transformer.getParameterSize() / 1000_000) + "M");
+        OUT.println("Parameter size:  " + Math.round((float) transformer.parameterSize / 1000_000) + "M");
 
         if (!config.isCalculationOnly())
         {
-            Tokenizer tokenizer = Tokenizer.getInstance(config);
-            Communicator processor = new Communicator(config, tokenizer, transformer);
+            Tokenizer tokenizer = TokenizerType.getTokenizer(config);
+            Generate processor = new Generate(config, tokenizer, transformer);
 
             int pos = 0;
             int lastToken = config.getEndOfTextToken();
@@ -100,6 +129,7 @@ public class AppMain
 
         OUT.println("Maximum length of generated text: " + config.getLengthLimit());
         OUT.println("Output is selected from the best " + config.getTopK() + " tokens (topK)");
+        OUT.println("Max memory: " + config.getMemorySize());
     }
 
     private static String input() throws IOException
@@ -124,6 +154,19 @@ public class AppMain
         if ( ! tokenByTokenResponse.toString().equals(response))
         {
             OUT.print("\nCorrected unicode response:\n" + response);
+        }
+    }
+
+    public static PrintStream getPrintStream()
+    {
+        try
+        {
+            return new PrintStream(System.out, true, "utf-8");
+        }
+        catch (Exception e)
+        {
+            System.out.println("\nError during setting the console to UTF-8:\n" + e.getMessage());
+            return System.out;
         }
     }
 }

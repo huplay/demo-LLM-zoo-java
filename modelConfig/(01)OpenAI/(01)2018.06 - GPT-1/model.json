@@ -1,0 +1,10 @@
+{
+  "name": "OpenAI GPT-1",
+  "transformerType": "OPENAI_GPT_1",
+  "tokenizerType": "OPENAI_GPT_1",
+  "repo": "https://huggingface.co/openai-community/openai-gpt",
+  "--originalRepo--": "https://github.com/openai/finetune-transformer-lm",
+  "files": ["vocab.json", "merges.txt", "model.safetensors"],
+  "decoderParameterNameFormat": "h.{decoderId}.{name}",
+  "memorySize": 1024
+}

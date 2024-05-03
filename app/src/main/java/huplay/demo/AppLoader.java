@@ -1,5 +1,7 @@
 package huplay.demo;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import huplay.demo.config.ModelConfig;
 import huplay.demo.config.TransformerType;
 import huplay.demo.transformer.BaseTransformer;
 import huplay.demo.util.Util;
@@ -10,147 +12,105 @@ import java.io.*;
 import java.util.*;
 
 import static huplay.demo.AppMain.displayConfig;
+import static huplay.demo.AppMain.getPrintStream;
 
 public class AppLoader
 {
-    private static final PrintStream OUT = getPrintStream();
+    public static final PrintStream OUT = getPrintStream();
     public static final Util UTIL = new Util();
+    private static final ObjectMapper objectMapper = new ObjectMapper();
 
-    public static final String ARG_CALC = "-calc";
-    public static final String ARG_NO_EXIT = "-noExit";
-    public static final String ARG_MAX = "-max";
-    public static final String ARG_TOP_K = "-topK";
-    public static final String ARG_MEM = "-mem";
-
-    public static void main(String... args) throws Exception
+    public static void main(String... args)
     {
-        logo();
-
-        boolean isContinue = true;
-        while (isContinue)
+        try
         {
-            // Read arguments (possibly asking the user to select the model)
-            Arguments arguments = readArguments(args);
-            isContinue = arguments.isNoExit();
+            logo();
+            new AppLoader().start(args);
+        }
+        catch (Exception e)
+        {
+            OUT.println("ERROR: " + e.getMessage());
+        }
+    }
 
-            // Read config of the selected model
-            Config config = new Config(arguments);
+    private void start(String... args) throws Exception
+    {
+        // Read arguments
+        Arguments arguments = Arguments.readArguments(args);
 
-            if (config.isCalculationOnly())
+        // If the model isn't specified, allow the user to select it
+        if (arguments.getConfigPath() == null)
+        {
+            selectModel(arguments);
+        }
+
+        // Read the modelConfig of the selected model
+        ModelConfig modelConfig = ModelConfig.read(arguments, objectMapper);
+
+        // Check necessary files
+        List<String> missingFiles = checkFiles(modelConfig, arguments.getModelPath());
+
+        // Download the missing files
+        download(missingFiles, modelConfig, arguments.getModelPath());
+
+        // Read the config (first look into the model folder, second to the config folder (maybe it's different)
+        Config config = Config.read(arguments, modelConfig, objectMapper);
+
+        if (arguments.isCalculationOnly())
+        {
+            // Calculation only. Display config, parameter size
+            config.setCalculationOnly(true);
+            BaseTransformer transformer = TransformerType.getTransformer(config);
+            displayConfig(config, transformer.getParameterSize());
+        }
+        else
+        {
+            // Determine memory requirement
+            int memorySize = determineMemoryRequirement(config);
+
+            try
             {
-                // Calculation only. Display config, parameter size
-                config.setCalculationOnly(true);
-                TransformerType transformerType = TransformerType.valueOf(config.getTransformerType());
-                BaseTransformer transformer = transformerType.getTransformer(config);
-                displayConfig(config, transformer.getParameterSize());
-            }
-            else
-            {
-                // Determine memory requirement
-                int memorySize = determineMemoryRequirement(config);
+                String userDir = System.getProperty("user.dir").replace('\\', '/');
 
-                // Download the parameters if missing
-                if (download(config))
-                {
-                    try
-                    {
-                        // Open the main app to launch the model
-                        String command = "java -Xmx" +
-                                memorySize + "m -Xms" + memorySize + "m" +
-                                " -cp " + System.getProperty("user.dir") + "/app/target/demo-llm-zoo.jar huplay.demo.AppMain" +
-                                " \"" + arguments.getName() + "\"" +
+                // Open the main app to launch the model
+                String command = "java" +
+                                " -Xmx" + memorySize + "m -Xms" + memorySize + "m" +
+                                " -cp " + userDir + "/app/target/demo-llm-zoo.jar" +
+                                " huplay.demo.AppMain" +
+                                " \"" + arguments.getRelativePath() + "\"" +
                                 " -max=" + config.getLengthLimit() +
                                 " -topK=" + config.getTopK();
 
-                        OUT.println("Command:\n" + command + "\n");
-                        Runtime.getRuntime().exec("cmd /k start cmd /c " + command);
-                    }
-                    catch (IOException e)
-                    {
-                        OUT.println("Error: " + e.getMessage());
-                    }
-                }
+                System.out.println("Command:\n" + command + "\n");
+                Runtime.getRuntime().exec("cmd /k start cmd /c " + command);
+            }
+            catch (IOException e)
+            {
+                System.out.println("Error launching the main app: " + e.getMessage());
             }
         }
     }
 
     public static void logo()
     {
-        OUT.println(" ____                          _     _     __  __");
-        OUT.println("|  _ \\  ___ _ __ ___   ___    | |   | |   |  \\/  |   _______   ___");
-        OUT.println("| | | |/ _ \\ '_ ` _ \\ / _ \\   | |   | |   | |\\/| |  |_  / _ \\ / _ \\");
-        OUT.println("| |_| |  __/ | | | | | (_) |  | |___| |___| |  | |   / / (_) | (_) |");
-        OUT.println("|____/ \\___|_| |_| |_|\\___/   |_____|_____|_|  |_|  /___\\___/ \\___/");
-        OUT.println("Util: " + UTIL.getUtilName() + "\n");
+        System.out.println(" ____                          _     _     __  __");
+        System.out.println("|  _ \\  ___ _ __ ___   ___    | |   | |   |  \\/  |   _______   ___");
+        System.out.println("| | | |/ _ \\ '_ ` _ \\ / _ \\   | |   | |   | |\\/| |  |_  / _ \\ / _ \\");
+        System.out.println("| |_| |  __/ | | | | | (_) |  | |___| |___| |  | |   / / (_) | (_) |");
+        System.out.println("|____/ \\___|_| |_| |_|\\___/   |_____|_____|_|  |_|  /___\\___/ \\___/");
+        System.out.println("Util: " + UTIL.getUtilName() + "\n");
     }
 
-    public static Arguments readArguments(String[] args) throws Exception
+    private void selectModel(Arguments arguments) throws Exception
     {
-        File file = new File("modelConfig");
-        String configRoot = file.getAbsolutePath();
-        String modelRoot = System.getenv().getOrDefault("DEMO_LLM_ZOO_MODEL_ROOT", configRoot);
+        String configRoot = arguments.getConfigRoot();
+        String configPath = selectModel(configRoot, configRoot);
+        String relativePath = configPath.substring(configRoot.length() + 1);
 
-        // Default values
-        String name = null;
-        int maxLength = 25;
-        int topK = 40;
-        int memorySize = 0;
-        boolean isCalculationOnly = false;
-        boolean isNoExit = false;
-
-        if (args != null)
-        {
-            // Iterate over the passed parameters and override the default values
-            for (String arg : args)
-            {
-                if (arg.charAt(0) == '-')
-                {
-                    if (equals(arg, ARG_CALC)) isCalculationOnly = true;
-                    else if (equals(arg, ARG_NO_EXIT)) isNoExit = true;
-                    else
-                    {
-                        String[] parts = arg.split("=");
-                        if (parts.length == 2)
-                        {
-                            String key = parts[0];
-                            String value = parts[1];
-
-                            if (equals(key, ARG_MAX)) maxLength = readInt(value, maxLength);
-                            else if (equals(key, ARG_TOP_K)) topK = readInt(value, topK);
-                            else if (equals(key, ARG_MEM)) memorySize = readInt(value, 0);
-                        }
-                        else
-                        {
-                            OUT.println("\nWARNING: Unrecognisable argument: " + arg + "\n");
-                        }
-                    }
-                }
-                else if (name != null)
-                {
-                    OUT.println("\nWARNING: Unrecognisable argument: " + arg + "\n");
-                }
-                else
-                {
-                    name = removeDoubleQuotes(arg);
-                }
-            }
-        }
-
-        if (name == null)
-        {
-            String path = ask(configRoot, configRoot);
-            name = path.substring(configRoot.length() + 1);
-        }
-
-        return new Arguments(name, configRoot, modelRoot, maxLength, topK, isCalculationOnly, isNoExit, memorySize);
+        arguments.setRelativePath(relativePath);
     }
 
-    private static boolean equals(String a, String b)
-    {
-        return a.toLowerCase(Locale.ROOT).equals(b.toLowerCase(Locale.ROOT));
-    }
-
-    private static String ask(String path, String configRoot) throws IOException
+    private String selectModel(String path, String configRoot) throws IOException
     {
         File[] fileList = new File(path).listFiles();
 
@@ -162,7 +122,7 @@ public class AppLoader
             // Find model.properties
             for (File file : files)
             {
-                if (file.isFile() && file.getName().equals("model.properties"))
+                if (file.isFile() && file.getName().equals("model.json"))
                 {
                     return path;
                 }
@@ -195,14 +155,14 @@ public class AppLoader
             if (directories.isEmpty())
             {
                 // Go back a level if there's no model here and no subfolders
-                OUT.println("There is no model in the selected folder.");
-                return ask(getParentFolder(path), configRoot);
+                System.out.println("There is no model in the selected folder.");
+                return selectModel(getParentFolder(path), configRoot);
             }
             else
             {
                 if (!path.equals(configRoot))
                 {
-                    OUT.println(alignRight("0", length) + ": ..");
+                    System.out.println(alignRight("0", length) + ": ..");
                 }
 
                 // Display the list of directories
@@ -213,7 +173,7 @@ public class AppLoader
 
                     String displayName = getDisplayName(entry.getValue());
 
-                    OUT.println(id + ": " + displayName);
+                    System.out.println(id + ": " + displayName);
                     i++;
                 }
 
@@ -223,7 +183,7 @@ public class AppLoader
                 int choice;
                 while (true)
                 {
-                    OUT.print("Please select: ");
+                    System.out.print("Please select: ");
                     String text = reader.readLine();
 
                     try
@@ -240,18 +200,18 @@ public class AppLoader
                             break;
                         }
 
-                        OUT.println("Incorrect choice. (Press X to exit any time.)");
+                        System.out.println("Incorrect choice. (Press X to exit any time.)");
                     }
                     catch (Exception e)
                     {
-                        OUT.println("Incorrect choice. (Press X to exit any time.)");
+                        System.out.println("Incorrect choice. (Press X to exit any time.)");
                     }
                 }
 
                 String newPath = "";
                 if (choice == -1)
                 {
-                    OUT.println("Bye!");
+                    System.out.println("Bye!");
                     System.exit(0);
                 }
                 else if (choice == 0)
@@ -263,13 +223,13 @@ public class AppLoader
                     newPath = path + "/" + directories.get(choice);
                 }
 
-                OUT.println();
-                return ask(newPath, configRoot);
+                System.out.println();
+                return selectModel(newPath, configRoot);
             }
         }
 
-        OUT.println("There are no configured models.");
-        OUT.println("Bye!");
+        System.out.println("There are no configured models.");
+        System.out.println("Bye!");
         System.exit(0);
         return null;
     }
@@ -314,67 +274,68 @@ public class AppLoader
         return path.substring(0, lastIndex);
     }
 
-    private static String removeDoubleQuotes(String text)
-    {
-        if (text == null) return null;
-        if (text.charAt(0) == '"') text = text.substring(1);
-        if (text.charAt(text.length() - 1) == '"') text = text.substring(0, text.length() - 1);
-        return text;
-    }
-
     private static int determineMemoryRequirement(Config config)
     {
         // First, use the requested memory size (if exists)
-        int memorySize = config.getMemorySize();
-        if (memorySize <= 0)
+        Integer memorySize = config.getRequestedMemorySize();
+        if (memorySize == 0)
         {
             // Second, use the configured total memory size (if exists)
-            memorySize = config.getMemorySizeTotal();
-            if (memorySize <= 0)
+            memorySize = config.getMemorySize();
+            if (memorySize == null || memorySize == 0)
             {
-                // Third, use the configured additional memory size (if exists), or the default 2000M
-                int additionalMemorySize = config.getMemorySizeAdditional();
-                if (additionalMemorySize <= 0)
-                {
-                    additionalMemorySize = 2000;
-                }
-
-                // Calculate the parameter size
+                // Third, calculate the required memory
                 config.setCalculationOnly(true);
-                TransformerType transformerType = TransformerType.valueOf(config.getTransformerType());
-                BaseTransformer transformer = transformerType.getTransformer(config);
+                BaseTransformer transformer = TransformerType.getTransformer(config);
                 int parameterMemorySize = Math.round((float) transformer.getParameterSize() / 1000 / 1000 * 4);
 
-                memorySize = additionalMemorySize + parameterMemorySize;
+                memorySize = parameterMemorySize + 2048;
             }
         }
 
         return memorySize;
     }
 
-    private static boolean download(Config config) throws IOException, InterruptedException
+    public static List<String> checkFiles(ModelConfig modelConfig, String modelPath)
     {
-        boolean isOk = true;
+        List<String> missingFiles = new ArrayList<>();
 
-        for (String fileName : config.getParameterFiles())
+        for (String fileName : modelConfig.getFiles())
         {
-            String path = config.getModelPath() + fileName;
-            File file = new File(path);
+            String path = modelPath + "/" + fileName;
 
+            File file = new File(path);
             if (!file.exists())
             {
-                isOk = false;
-                OUT.println("Parameter file is missing. (" + fileName + ")");
-                if (config.getParameterRepo() != null)
-                {
-                    OUT.print("Do you want me to download? Repo: " + config.getParameterRepo() + "\nYes or no? ");
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-                    String text = reader.readLine();
-                    OUT.println();
+                missingFiles.add(fileName);
+            }
+        }
 
-                    if (text.equals("y") || text.equals("Y"))
+        return missingFiles;
+    }
+
+    private void download(List<String> missingFiles, ModelConfig modelConfig, String modelPath) throws Exception
+    {
+        if (missingFiles.size() > 0)
+        {
+            if (modelConfig.getRepo() == null || modelConfig.getRepo().equals(""))
+            {
+                throw new IdentifiedException("There are missing files: " + missingFiles);
+            }
+            else
+            {
+                System.out.println("Parameter files are missing. " + missingFiles);
+                System.out.print("Do you want me to download these? Repo: " + modelConfig.getRepo() + "\nYes or no? ");
+                BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+                String text = reader.readLine();
+                System.out.println();
+
+                if (text.equals("y") || text.equals("Y"))
+                {
+                    for (String missingFile : missingFiles)
                     {
-                        Downloader downloader = new Downloader(config, fileName, path);
+                        System.out.println("Downloading files to " + modelPath);
+                        Downloader downloader = new Downloader(modelConfig, missingFile, modelPath);
                         Thread thread = new Thread(downloader);
                         thread.start();
 
@@ -394,40 +355,13 @@ public class AppLoader
                             System.out.print("Downloading |" + progress + "|\r");
                             Thread.sleep(100);
                         }
-
-                        isOk = downloader.isOk();
                     }
                 }
+                else
+                {
+                    throw new IdentifiedException("There are missing files: " + missingFiles);
+                }
             }
-        }
-
-        return isOk;
-    }
-
-    private static int readInt(String value, int defaultValue)
-    {
-        try
-        {
-            return Integer.parseInt(value);
-        }
-        catch (Exception e)
-        {
-            OUT.println("\nWARNING: The provided value can't be converted to integer (" + value
-                    + "). Default value will be used.\n");
-        }
-        return defaultValue;
-    }
-
-    public static PrintStream getPrintStream()
-    {
-        try
-        {
-            return new PrintStream(System.out, true, "utf-8");
-        }
-        catch (Exception e)
-        {
-            System.out.println("\nError during setting the console to UTF-8:\n" + e.getMessage());
-            return System.out;
         }
     }
 }

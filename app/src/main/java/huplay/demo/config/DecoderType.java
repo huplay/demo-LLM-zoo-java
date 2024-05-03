@@ -1,5 +1,6 @@
 package huplay.demo.config;
 
+import huplay.demo.IdentifiedException;
 import huplay.demo.transformer.BaseDecoder;
 import huplay.demo.transformer._2018_01_google_transformer.TransformerDecoder;
 import huplay.demo.transformer._2021_03_eleuther_gptneo.GPTNeoDecoder;
@@ -28,7 +29,7 @@ public enum DecoderType
             case ELEUTHERAI_NEO: return new GPTNeoDecoder(config, decoderId);
             case META_LLAMA: return new LlamaDecoder(config, decoderId);
             default:
-                throw new RuntimeException("Unknown transformer type: " + config.getTransformerType());
+                throw new IdentifiedException("Unknown transformer type: " + config.getTransformerType());
         }
     }
 }

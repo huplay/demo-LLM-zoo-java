@@ -11,18 +11,20 @@ public abstract class BaseTransformer extends ParameterStore
     protected final int decoderCount;
     protected final int hiddenSize;
     protected final int tokenCount;
-    protected final int maxLength;
+    protected final int embeddingCount;
+    protected final int contextSize;
     protected final float epsilon;
 
     protected final List<BaseDecoder> decoders = new ArrayList<>();
 
     public BaseTransformer(Config config, DecoderType decoderType)
     {
-        super(config, config.getTransformerParameterFormat(), config.getTransformerParameterOverrides());
+        super(config);
         this.decoderCount = config.getDecoderCount();
         this.hiddenSize = config.getHiddenSize();
         this.tokenCount = config.getTokenCount();
-        this.maxLength = config.getMaxLength();
+        this.embeddingCount = config.getTokenCount();
+        this.contextSize = config.getContextSize();
         this.epsilon = config.getEpsilon();
 
         for (int i = 0; i < decoderCount; i++)
@@ -48,18 +50,23 @@ public abstract class BaseTransformer extends ParameterStore
     }
 
     @Override
-    protected String formatName(String file)
+    protected String formatName(String name)
     {
-        if (parameterOverrides != null)
+        if (config.getParameterNameOverrides() != null)
         {
-            String override = parameterOverrides.get(file);
+            String override = config.getParameterNameOverrides().get(name);
             if (override != null)
             {
-                file = override;
+                name = override;
             }
         }
 
-        return parameterFormat.replace("{name}", file);
+        if (config.getTransformerParameterNameFormat() != null)
+        {
+            name = config.getTransformerParameterNameFormat().replace("{name}", name);
+        }
+
+        return name;
     }
 
     @Override

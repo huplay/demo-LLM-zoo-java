@@ -1,5 +1,8 @@
 package huplay.demo.tokenizer;
 
+import huplay.demo.IdentifiedException;
+import huplay.demo.config.Config;
+
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -16,25 +19,42 @@ import java.util.*;
  *
  * @author Hunor Szegi
  */
-public final class SentencePieceTokenizer implements Tokenizer
+public class SentencePieceTokenizer implements Tokenizer
 {
     private static final int START_OF_TEXT = 1;
     private static final String HEX_TOKEN_PREFIX = "<0x";
     private static final String HEX_TOKEN_SUFFIX = ">";
 
-    private final String[] vocabulary;
-    private final float[] vocabularyScores;
+    protected String[] vocabulary;
+    protected float[] vocabularyScores;
     private final Map<String, Integer> vocabularyIndex = new HashMap<>();
 
-    public SentencePieceTokenizer(String path, int tokenCount)
+    public SentencePieceTokenizer(Config config)
     {
-        this.vocabulary = new String[tokenCount];
-        this.vocabularyScores = new float[tokenCount];
+        init(config);
 
-        File file = new File(path + "/tokenizer.bin");
+        // Create the vocabulary index, to quickly find the id of a token
+        for (int i = 0; i < config.getTokenCount(); i++)
+        {
+            vocabularyIndex.put(vocabulary[i], i);
+        }
+    }
+
+    protected void init(Config config)
+    {
+        // TODO: Read config from json
+
+        this.vocabulary = new String[config.getTokenCount()];
+        this.vocabularyScores = new float[config.getTokenCount()];
+
+        File tokenizerFile = config.getModelConfig().findFile("tokenizer.json");
+        if (!tokenizerFile.exists() || !tokenizerFile.isFile())
+        {
+            throw new IdentifiedException("SentencePiece tokenizer merges file is missing. (" + tokenizerFile.getName() + ")");
+        }
 
         // Read the vocabulary from the binary config file
-        Path configFilePath = Paths.get(file.getAbsolutePath());
+        Path configFilePath = Paths.get(tokenizerFile.getAbsolutePath());
         try (FileChannel channel = FileChannel.open(configFilePath, StandardOpenOption.READ))
         {
             ByteBuffer buffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size());
@@ -44,7 +64,7 @@ public final class SentencePieceTokenizer implements Tokenizer
             buffer.getInt();
 
             // Iterate over on all tokens
-            for (int i = 0; i < tokenCount; i++)
+            for (int i = 0; i < config.getTokenCount(); i++)
             {
                 // Read vocabulary score
                 this.vocabularyScores[i] = buffer.getFloat();
@@ -60,13 +80,7 @@ public final class SentencePieceTokenizer implements Tokenizer
         }
         catch (Exception e)
         {
-            throw new RuntimeException("SentencePiece tokenizer vocabulary reading error. " + e.getMessage());
-        }
-
-        // Create the vocabulary index, to quickly find the id of a token
-        for (int i = 0; i < tokenCount; i++)
-        {
-            vocabularyIndex.put(vocabulary[i], i);
+            throw new IdentifiedException("SentencePiece tokenizer vocabulary reading error.", e);
         }
     }
 
@@ -93,6 +107,11 @@ public final class SentencePieceTokenizer implements Tokenizer
     private String decodeToken(int prevToken, Integer token)
     {
         String text = vocabulary[token];
+
+        if (text == null)
+        {
+            return "<ERROR>";
+        }
 
         if (text.length() == 6 && text.startsWith(HEX_TOKEN_PREFIX) && text.endsWith(HEX_TOKEN_SUFFIX))
         {

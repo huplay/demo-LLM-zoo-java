@@ -24,7 +24,7 @@ public class GPT1 extends BaseTransformer
 
         // Load parameters
         loadMatrix(TOKEN_EMBEDDINGS, "tokens_embed.weight", tokenCount, hiddenSize);
-        loadMatrix(POSITION_EMBEDDINGS, "positions_embed.weight", maxLength, hiddenSize);
+        loadMatrix(POSITION_EMBEDDINGS, "positions_embed.weight", contextSize, hiddenSize);
     }
 
     public float[] execute(int pos, float[] embedding, boolean isOutputProcessing)

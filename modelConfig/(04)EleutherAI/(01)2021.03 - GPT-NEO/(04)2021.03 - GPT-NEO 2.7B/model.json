@@ -1,0 +1,10 @@
+{
+  "name": "EleutherAI GPT-NEO ADA (2.7B)",
+  "transformerType": "ELEUTHERAI_NEO",
+  "tokenizerType": "OPENAI_GPT_2",
+  "repo": "https://huggingface.co/EleutherAI/gpt-neo-2.7B",
+  "files": ["config.json", "vocab.json", "merges.txt", "model.safetensors"],
+  "transformerParameterNameFormat": "transformer.{name}",
+  "decoderParameterNameFormat": "transformer.h.{decoderId}.{name}",
+  "memorySize": 11264
+}

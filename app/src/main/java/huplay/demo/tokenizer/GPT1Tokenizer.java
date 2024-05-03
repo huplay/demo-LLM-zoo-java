@@ -1,5 +1,12 @@
 package huplay.demo.tokenizer;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import huplay.demo.IdentifiedException;
+import huplay.demo.config.Config;
+
+import java.io.File;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -14,28 +21,50 @@ import java.util.regex.Pattern;
  */
 public class GPT1Tokenizer implements Tokenizer
 {
-    private final Map<Character, Byte> charEncoding = new HashMap<>(256);
-    private final Map<Integer, Character> charDecoding = new HashMap<>(256);
+    private final Map<Integer, Character> charDecoding = new HashMap<>(478);
 
-    private final Map<String, Integer> tokenEncoding = new HashMap<>(50257);
-    private final Map<Integer, String> tokenDecoding = new HashMap<>(50257);
+    private final Map<String, Integer> tokenEncoding;
+    private final Map<Integer, String> tokenDecoding = new HashMap<>(40000);
 
     private final Map<Pair, Integer> merges;
 
     private final Pattern pattern =
             Pattern.compile("'s|'t|'re|'ve|'m|'ll|'d| ?\\p{L}+| ?\\p{N}+| ?[^\\s\\p{L}\\p{N}]+|\\s+(?!\\S)|\\s+");
 
-    public GPT1Tokenizer(String path)
+    public GPT1Tokenizer(Config config)
     {
-        addCharRange(0, 'Ā', 'Ġ');
-        addCharRange(33, '!', '~');
-        addCharRange(127, 'ġ', 'ł');
-        addCharRange(161, '¡', '¬');
-        addCharRange(173, 'Ń', 'Ń');
-        addCharRange(174, '®', 'ÿ');
+        addCharRange(0, 256, 288);
+        addCharRange(33, 33, 126);
+        addCharRange(127, 289, 322);
+        addCharRange(161, 161, 172);
+        addCharRange(173, 323, 323);
+        addCharRange(174, 174, 255);
 
-        FileReader.readTokensFile(path + "/encoder_bpe_40000.json", tokenEncoding, tokenDecoding);
-        merges = FileReader.readMergesFile(path + "/vocab_40000.bpe", true);
+        File vocabularyFile = config.getModelConfig().findFile("vocab.json");
+        if (!vocabularyFile.exists() || !vocabularyFile.isFile())
+        {
+            throw new IdentifiedException("GPT-1 tokenizer vocabulary file is missing. (" + vocabularyFile.getName() + ")");
+        }
+
+        try
+        {
+            TypeReference<Map<String, Integer>> typeRef = new TypeReference<>() {};
+            tokenEncoding = new ObjectMapper().readValue(vocabularyFile, typeRef);
+
+            tokenEncoding.forEach((key, value) -> tokenDecoding.put(value, key));
+        }
+        catch (IOException e)
+        {
+            throw new IdentifiedException("GPT-1 tokenizer vocabulary reading error.", e);
+        }
+
+        File mergesFile = config.getModelConfig().findFile("merges.txt");
+        if (!mergesFile.exists() || !mergesFile.isFile())
+        {
+            throw new IdentifiedException("GPT-1 tokenizer merges file is missing. (" + mergesFile.getName() + ")");
+        }
+
+        merges = FileReader.readMergesFile(mergesFile, true);
     }
 
     public List<Integer> encode(String text)
@@ -104,23 +133,13 @@ public class GPT1Tokenizer implements Tokenizer
                 textBuilder.append(word);
             }
         }
-        String text = textBuilder.toString();
-
-        byte[] bytes = new byte[text.length()];
-        for (int i = 0; i < text.length(); i++)
-        {
-            char chr = text.charAt(i);
-            bytes[i] = (chr == ' ') ? 32 : charEncoding.get(text.charAt(i));
-        }
-
-        return new String(bytes, StandardCharsets.UTF_8);
+        return textBuilder.toString();
     }
 
-    private void addCharRange(int pos, char firstChar, char lastChar)
+    private void addCharRange(int pos, int firstChar, int lastChar)
     {
         for (int i = firstChar; i <= lastChar; i++)
         {
-            charEncoding.put((char) i, (byte)pos);
             charDecoding.put(pos, (char) i);
             pos++;
         }

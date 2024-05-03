@@ -1,0 +1,9 @@
+{
+  "name": "BLOOMZ 560M",
+  "transformerType": "BIG_SCIENCE_BLOOM",
+  "tokenizerType": "OPENAI_GPT_2",
+  "repo": "https://huggingface.co/bigscience/bloomz-560m",
+  "files": ["config.json", "tokenizer.json", "model.safetensors"],
+  "decoderParameterNameFormat": "h.{decoderId}.{name}",
+  "memorySize": 4096
+}
