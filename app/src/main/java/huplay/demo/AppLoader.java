@@ -2,7 +2,7 @@ package huplay.demo;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import huplay.demo.config.ModelConfig;
-import huplay.demo.config.TransformerType;
+import huplay.demo.transformer.TransformerType;
 import huplay.demo.transformer.BaseTransformer;
 import huplay.demo.util.Util;
 import huplay.demo.config.Arguments;

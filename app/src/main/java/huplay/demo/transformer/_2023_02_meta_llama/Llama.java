@@ -1,6 +1,6 @@
 package huplay.demo.transformer._2023_02_meta_llama;
 
-import huplay.demo.config.DecoderType;
+import huplay.demo.transformer.DecoderType;
 import huplay.demo.config.Config;
 import huplay.demo.transformer.BaseTransformer;
 import huplay.demo.transformer.BaseDecoder;

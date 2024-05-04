@@ -1,7 +1,7 @@
 {
   "name": "Zhang TinyLlama 1.1B Chat 0.4",
   "transformerType": "META_LLAMA",
-  "tokenizerType": "SentencePiece",
+  "tokenizerType": "SENTENCE_PIECE",
   "repo": "https://huggingface.co/TinyLlama/TinyLlama-1.1B-Chat-v0.4",
   "files": ["config.json", "tokenizer.json", "model.safetensors"],
   "transformerParameterNameFormat": "model.{name}",

@@ -1,6 +1,6 @@
 package huplay.demo.transformer._2022_05_big_science_bloom;
 
-import huplay.demo.config.DecoderType;
+import huplay.demo.transformer.DecoderType;
 import huplay.demo.config.Config;
 import huplay.demo.transformer.BaseTransformer;
 import huplay.demo.transformer.BaseDecoder;

@@ -1,6 +1,6 @@
 package huplay.demo.transformer._2019_02_openai_gpt2;
 
-import huplay.demo.config.DecoderType;
+import huplay.demo.transformer.DecoderType;
 import huplay.demo.config.Config;
 import huplay.demo.transformer.BaseTransformer;
 import huplay.demo.transformer.BaseDecoder;

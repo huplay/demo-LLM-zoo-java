@@ -1,6 +1,6 @@
 package huplay.demo.transformer._2021_03_eleuther_gptneo;
 
-import huplay.demo.config.DecoderType;
+import huplay.demo.transformer.DecoderType;
 import huplay.demo.config.Config;
 import huplay.demo.transformer.BaseTransformer;
 import huplay.demo.transformer.BaseDecoder;

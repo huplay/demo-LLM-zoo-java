@@ -1,6 +1,5 @@
 package huplay.demo.transformer;
 
-import huplay.demo.config.DecoderType;
 import huplay.demo.config.Config;
 
 import java.util.ArrayList;

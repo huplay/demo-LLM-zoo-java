@@ -1,7 +1,7 @@
 package huplay.demo.transformer._2018_01_google_transformer;
 
 import huplay.demo.config.Config;
-import huplay.demo.config.DecoderType;
+import huplay.demo.transformer.DecoderType;
 import huplay.demo.transformer.BaseDecoder;
 import huplay.demo.transformer.BaseTransformer;
 

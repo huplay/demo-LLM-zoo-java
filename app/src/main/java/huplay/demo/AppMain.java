@@ -3,7 +3,9 @@ package huplay.demo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import huplay.demo.config.*;
 import huplay.demo.tokenizer.Tokenizer;
+import huplay.demo.tokenizer.TokenizerType;
 import huplay.demo.transformer.BaseTransformer;
+import huplay.demo.transformer.TransformerType;
 
 import java.io.*;
 import java.util.ArrayList;
