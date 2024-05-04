@@ -13,6 +13,7 @@ import java.util.*;
 
 import static huplay.demo.AppMain.displayConfig;
 import static huplay.demo.AppMain.getPrintStream;
+import static java.lang.Math.round;
 
 public class AppLoader
 {
@@ -81,24 +82,24 @@ public class AppLoader
                                 " -max=" + config.getLengthLimit() +
                                 " -topK=" + config.getTopK();
 
-                System.out.println("Command:\n" + command + "\n");
+                OUT.println("Command:\n" + command + "\n");
                 Runtime.getRuntime().exec("cmd /k start cmd /c " + command);
             }
             catch (IOException e)
             {
-                System.out.println("Error launching the main app: " + e.getMessage());
+                OUT.println("Error launching the main app: " + e.getMessage());
             }
         }
     }
 
     public static void logo()
     {
-        System.out.println(" ____                          _     _     __  __");
-        System.out.println("|  _ \\  ___ _ __ ___   ___    | |   | |   |  \\/  |   _______   ___");
-        System.out.println("| | | |/ _ \\ '_ ` _ \\ / _ \\   | |   | |   | |\\/| |  |_  / _ \\ / _ \\");
-        System.out.println("| |_| |  __/ | | | | | (_) |  | |___| |___| |  | |   / / (_) | (_) |");
-        System.out.println("|____/ \\___|_| |_| |_|\\___/   |_____|_____|_|  |_|  /___\\___/ \\___/");
-        System.out.println("Util: " + UTIL.getUtilName() + "\n");
+        OUT.println(" ____                          _     _     __  __");
+        OUT.println("|  _ \\  ___ _ __ ___   ___    | |   | |   |  \\/  |   _______   ___");
+        OUT.println("| | | |/ _ \\ '_ ` _ \\ / _ \\   | |   | |   | |\\/| |  |_  / _ \\ / _ \\");
+        OUT.println("| |_| |  __/ | | | | | (_) |  | |___| |___| |  | |   / / (_) | (_) |");
+        OUT.println("|____/ \\___|_| |_| |_|\\___/   |_____|_____|_|  |_|  /___\\___/ \\___/");
+        OUT.println("Util: " + UTIL.getUtilName() + "\n");
     }
 
     private void selectModel(Arguments arguments) throws Exception
@@ -155,14 +156,14 @@ public class AppLoader
             if (directories.isEmpty())
             {
                 // Go back a level if there's no model here and no subfolders
-                System.out.println("There is no model in the selected folder.");
+                OUT.println("There is no model in the selected folder.");
                 return selectModel(getParentFolder(path), configRoot);
             }
             else
             {
                 if (!path.equals(configRoot))
                 {
-                    System.out.println(alignRight("0", length) + ": ..");
+                    OUT.println(alignRight("0", length) + ": ..");
                 }
 
                 // Display the list of directories
@@ -173,7 +174,7 @@ public class AppLoader
 
                     String displayName = getDisplayName(entry.getValue());
 
-                    System.out.println(id + ": " + displayName);
+                    OUT.println(id + ": " + displayName);
                     i++;
                 }
 
@@ -183,7 +184,7 @@ public class AppLoader
                 int choice;
                 while (true)
                 {
-                    System.out.print("Please select: ");
+                    OUT.print("Please select: ");
                     String text = reader.readLine();
 
                     try
@@ -200,18 +201,18 @@ public class AppLoader
                             break;
                         }
 
-                        System.out.println("Incorrect choice. (Press X to exit any time.)");
+                        OUT.println("Incorrect choice. (Press X to exit any time.)");
                     }
                     catch (Exception e)
                     {
-                        System.out.println("Incorrect choice. (Press X to exit any time.)");
+                        OUT.println("Incorrect choice. (Press X to exit any time.)");
                     }
                 }
 
                 String newPath = "";
                 if (choice == -1)
                 {
-                    System.out.println("Bye!");
+                    OUT.println("Bye!");
                     System.exit(0);
                 }
                 else if (choice == 0)
@@ -223,13 +224,13 @@ public class AppLoader
                     newPath = path + "/" + directories.get(choice);
                 }
 
-                System.out.println();
+                OUT.println();
                 return selectModel(newPath, configRoot);
             }
         }
 
-        System.out.println("There are no configured models.");
-        System.out.println("Bye!");
+        OUT.println("There are no configured models.");
+        OUT.println("Bye!");
         System.exit(0);
         return null;
     }
@@ -287,7 +288,7 @@ public class AppLoader
                 // Third, calculate the required memory
                 config.setCalculationOnly(true);
                 BaseTransformer transformer = TransformerType.getTransformer(config);
-                int parameterMemorySize = Math.round((float) transformer.getParameterSize() / 1000 / 1000 * 4);
+                int parameterMemorySize = round((float) transformer.getParameterSize() / 1000 / 1000 * 4);
 
                 memorySize = parameterMemorySize + 2048;
             }
@@ -324,37 +325,38 @@ public class AppLoader
             }
             else
             {
-                System.out.println("Parameter files are missing. " + missingFiles);
-                System.out.print("Do you want me to download these? Repo: " + modelConfig.getRepo() + "\nYes or no? ");
+                OUT.println("Parameter files are missing. " + missingFiles);
+                OUT.print("Do you want me to download these? Repo: " + modelConfig.getRepo() + "\nYes or no? ");
                 BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
                 String text = reader.readLine();
-                System.out.println();
+                OUT.println();
 
                 if (text.equals("y") || text.equals("Y"))
                 {
                     for (String missingFile : missingFiles)
                     {
-                        System.out.println("Downloading files to " + modelPath);
                         Downloader downloader = new Downloader(modelConfig, missingFile, modelPath);
+
+                        OUT.println("File: " + missingFile + " (size: " + formatSize(downloader.getSize()) + ")");
+
                         Thread thread = new Thread(downloader);
                         thread.start();
 
-                        int pos = 1;
                         while (downloader.isInProgress())
                         {
-                            String progress = "";
-                            for (int i = 1; i <= 25; i++)
+                            if (downloader.getPieces() > 0)
                             {
-                                if (pos == i) progress += "=";
-                                else progress += " ";
+                                long pieces = downloader.getPieces();
+                                long position = downloader.getPosition();
+
+                                showProgressBar(pieces, position, 50);
+
+                                Thread.sleep(200);
                             }
-
-                            pos++;
-                            if (pos > 25) pos = 1;
-
-                            System.out.print("Downloading |" + progress + "|\r");
-                            Thread.sleep(100);
                         }
+
+                        // Display a completed progress bar
+                        showProgressBar(downloader.getPieces(), downloader.getPieces(), 50);
                     }
                 }
                 else
@@ -362,6 +364,76 @@ public class AppLoader
                     throw new IdentifiedException("There are missing files: " + missingFiles);
                 }
             }
+        }
+    }
+
+    private String formatSize(long size)
+    {
+        long x = 1024;
+
+        if (size < x) return size + " Bytes";
+        else if (size < x*x) return round((float)size/x) + " kB";
+        else if (size < x*x*x) return round((float)size/x/x) + " MB";
+        else if (size < x*x*x*x) return round((float)size/x/x/x) + " GB";
+        else return round((float)size/x/x/x/x) + " TB";
+    }
+
+    // ANSI escape codes
+    private static final String BLUE = "\033[0;34m"; // Changes the colour to blue
+    private static final String BLUE_BACKGROUND = "\033[44m"; // Changes the background colour to blue
+    private static final String WHITE_BACKGROUND = "\033[47m"; // Changes the background colour to white
+    private static final String RESET = "\033[0m"; // Changes the colour and background colour to default
+
+    // There's no full block unicode character (0x2588 only almost full),
+    // so I created it, changing the background colour of a space character
+    private static final String FULL = BLUE_BACKGROUND + " " + WHITE_BACKGROUND;
+
+    // Blocks with growing size (to make the progress more fine-grained)
+    private static final char[] BLOCKS = new char[] {' ', 0x258F, 0x258E, 0x258D, 0x258B, 0x258A, 0x2589};
+
+    public void showProgressBar(long total, long actual, int length)
+    {
+        if (total == actual)
+        {
+            // Display a completed progress bar
+            StringBuilder progressBar = new StringBuilder();
+            for (int i = 0; i < length; i++)
+            {
+                progressBar.append(FULL);
+            }
+
+            OUT.print("Download: " + BLUE + progressBar + RESET + " DONE   \n\n"); // Jump to next line
+        }
+        else
+        {
+            // Calculate the actual position within the progress bar and the percentage
+            // Make it 7 times bigger to be able to show the progress within a character
+            long position = Math.floorDiv(length * actual * 7, total);
+            String percentage = String.format("%.2f", (float) 100 * actual / total);
+
+            // Calculate the number of full blocks and the size of the last (progressing) character
+            long intPos = Math.floorDiv(position, 7);
+            long remainderPos = position % 7;
+
+            StringBuilder progressBar = new StringBuilder();
+            for (int i = 0; i < length; i++)
+            {
+                if (intPos > i)
+                {
+                    progressBar.append(FULL); // Display the full characters
+                }
+                else if (intPos == i)
+                {
+                    progressBar.append(BLOCKS[(int) remainderPos]); // Display the actually progressing character
+                }
+                else
+                {
+                    progressBar.append(" "); // Display the empty characters
+                }
+            }
+
+            // Use only \r to remain in the same line and redraw it next time
+            OUT.print("Download: " + BLUE + WHITE_BACKGROUND + progressBar + RESET + " " + percentage + "%\r");
         }
     }
 }
