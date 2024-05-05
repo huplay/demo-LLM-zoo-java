@@ -28,7 +28,7 @@ public class LlamaDecoder extends BaseDecoder
         // Read the optional config for the "key/value head" count
         // (At the original attention (MHA) there was only a single kind of head. Call it "query head" from now on.)
         // If the "query head" is different to the "key/value head" count, we are using Grouped Query Attention (GQA)
-        kvHeadCount = config.getIntOptional("attention.kv.head.count", headCount);
+        kvHeadCount = config.getIntOptional("num_key_value_heads", headCount);
         kvHeadSize = headCount / kvHeadCount;
         loadMatrix(ATT_KEY_WEIGHT, "self_attn.k_proj.weight", hiddenSize, hiddenSize / kvHeadSize);
         loadMatrix(ATT_VALUE_WEIGHT, "self_attn.v_proj.weight", hiddenSize, hiddenSize / kvHeadSize);

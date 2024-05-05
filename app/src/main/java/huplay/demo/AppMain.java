@@ -12,8 +12,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static huplay.demo.AppLoader.UTIL;
 import static huplay.demo.AppLoader.checkFiles;
-import static huplay.demo.AppLoader.logo;
 
 public class AppMain
 {
@@ -24,7 +24,8 @@ public class AppMain
     {
         try
         {
-            logo();
+            Logo.showLogo(OUT, "Demo LLM zoo", "1,2,3,4,,5,6,7,,8,9,10");
+            OUT.println("Util: " + UTIL.getUtilName() + "\n");
             new AppMain().start(args);
         }
         catch (IdentifiedException e)

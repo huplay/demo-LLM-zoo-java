@@ -20,12 +20,14 @@ public enum TransformerType
 
     public static BaseTransformer getTransformer(Config config)
     {
-        if (config.getTransformerType() == null)
+        String type = config.getTransformerType();
+        if (type == null)
         {
             throw new IdentifiedException("Transformer type isn't specified");
         }
 
-        TransformerType transformerType = TransformerType.valueOf(config.getTransformerType().toUpperCase());
+        type = type.toUpperCase();
+        TransformerType transformerType = TransformerType.valueOf(type);
         switch (transformerType)
         {
             case ORIGINAL_TRANSFORMER: return new Transformer(config);
@@ -35,7 +37,7 @@ public enum TransformerType
             case BIG_SCIENCE_BLOOM: return new Bloom(config);
             case META_LLAMA: return new Llama(config);
             default:
-                throw new IdentifiedException("Unknown transformer type: " + config.getTransformerType());
+                throw new IdentifiedException("Unknown transformer type: " + type);
         }
     }
 }

@@ -258,7 +258,7 @@ public class ParameterReader
         long parameterSize = descriptor.getSizeInBytes() * 8 / descriptor.getDataType().getBits();
         if (parameterSize != expectedSize)
         {
-            throw new IdentifiedException("The file has different size (" + parameterSize + ") " +
+            System.out.println("\nWARNING: The file has different size (" + parameterSize + ") " +
                     "to the expected (" + expectedSize + "). Id: " + descriptor.getId());
         }
     }

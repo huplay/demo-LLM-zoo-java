@@ -13,6 +13,7 @@ import java.util.*;
 
 import static huplay.demo.AppMain.displayConfig;
 import static huplay.demo.AppMain.getPrintStream;
+import static huplay.demo.Logo.showLogo;
 import static java.lang.Math.round;
 
 public class AppLoader
@@ -25,7 +26,8 @@ public class AppLoader
     {
         try
         {
-            logo();
+            showLogo(OUT,"Demo LLM zoo", "1,2,3,4,,5,6,7,,8,9,10");
+            OUT.println("Util: " + UTIL.getUtilName() + "\n");
             new AppLoader().start(args);
         }
         catch (Exception e)
@@ -326,7 +328,7 @@ public class AppLoader
             else
             {
                 OUT.println("Parameter files are missing. " + missingFiles);
-                OUT.print("Do you want me to download these? Repo: " + modelConfig.getRepo() + "\nYes or no? ");
+                OUT.print("Do you want to download these using the configured url: " + modelConfig.getRepo() + "\nYes or no? ");
                 BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
                 String text = reader.readLine();
                 OUT.println();

@@ -5,6 +5,8 @@ import huplay.demo.config.Config;
 import huplay.demo.tokenizer.Tokenizer;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
@@ -13,6 +15,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
+
+import static huplay.demo.tokenizer.sentencePiece.SentencePieceModel.ModelProto;
+import static huplay.demo.tokenizer.sentencePiece.SentencePieceModel.ModelProto.SentencePiece;
 
 /**
  * Java implementation of Google SentencePiece tokenizer (without training)
@@ -30,9 +35,22 @@ public class SentencePieceTokenizer implements Tokenizer
     protected float[] vocabularyScores;
     private final Map<String, Integer> vocabularyIndex = new HashMap<>();
 
-    public SentencePieceTokenizer(Config config)
+    public SentencePieceTokenizer(Config config, String variant)
     {
-        init(config);
+        File tokenizerFile = config.getModelConfig().findFile("tokenizer.model");
+        if (!tokenizerFile.exists() || !tokenizerFile.isFile())
+        {
+            throw new IdentifiedException("SentencePiece tokenizer merges file is missing. (" + tokenizerFile.getName() + ")");
+        }
+
+        if (variant.equals("TINY"))
+        {
+            initTiny(config, tokenizerFile, config.getTokenCount());
+        }
+        else
+        {
+            initStandard(config, tokenizerFile);
+        }
 
         // Create the vocabulary index, to quickly find the id of a token
         for (int i = 0; i < config.getTokenCount(); i++)
@@ -41,21 +59,52 @@ public class SentencePieceTokenizer implements Tokenizer
         }
     }
 
-    protected void init(Config config)
+    protected void initStandard(Config config, File tokenizerFile)
+    {
+        /*
+            The tokenizer.model file (which contains the vocabulary and the scores) is a Protocol Buffer file.
+            Protocol Buffer (Protobuf) is a cross-platform data serialization technique created by Google:
+            https://en.wikipedia.org/wiki/Protocol_Buffers
+
+            It needs a .proto file to describe the structure of the data. For SentencePiece you can found it here:
+            https://github.com/google/sentencepiece/blob/master/src/sentencepiece_model.proto
+            (It is stored in this repo at the "resources" folder as well, but it needed only once.)
+
+            Based on the .proto file you can generate source code (in different languages)
+            to store and read/write data using the protobuf app (protoc.exe). Download protobuf:
+            https://github.com/protocolbuffers/protobuf/releases/tag/v26.1
+
+            The SentencePieceModel.java was generated using this prompt:
+            protoc.exe -I=. --java_out=. sentencepiece_model.proto
+            (It is slightly modified to put into the correct package and renamed to camelcase.)
+         */
+        try
+        {
+            ModelProto model = ModelProto.newBuilder().mergeFrom(new FileInputStream(tokenizerFile)).build();
+
+            List<SentencePiece> sentencesPieces = model.getPiecesList();
+
+            this.vocabulary = new String[sentencesPieces.size()];
+            this.vocabularyScores = new float[sentencesPieces.size()];
+
+            int i = 0;
+            for (SentencePiece sentencePiece : sentencesPieces)
+            {
+                vocabulary[i] = sentencePiece.getPiece();
+                vocabularyScores[i] = sentencePiece.getScore();
+                i++;
+            }
+        }
+        catch (IOException e)
+        {
+            throw new IdentifiedException("SentencePiece tokenizer vocabulary reading error.", e);
+        }
+    }
+
+    protected void initTiny(Config config, File tokenizerFile, int tokenCount)
     {
         this.vocabulary = new String[config.getTokenCount()];
         this.vocabularyScores = new float[config.getTokenCount()];
-
-        File tokenizerFile = config.getModelConfig().findFile("tokenizer.model");
-        if (!tokenizerFile.exists() || !tokenizerFile.isFile())
-        {
-            throw new IdentifiedException("SentencePiece tokenizer merges file is missing. (" + tokenizerFile.getName() + ")");
-        }
-
-        // TODO: Some tokenizer.model files has different structure, like OpenLlama 3B:
-        // int length (???)
-        // {string[] token + 11 bytes (length ???)} * length
-        // info at the end of the file
 
         // Read the vocabulary from the binary config file
         Path configFilePath = Paths.get(tokenizerFile.getAbsolutePath());
@@ -64,27 +113,21 @@ public class SentencePieceTokenizer implements Tokenizer
             ByteBuffer buffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size());
             buffer.order(ByteOrder.LITTLE_ENDIAN);
 
-            // The first integer contains number of tokens
-            int length = buffer.getInt();
+            // The first integer contains the maximum token length (we don't need this info)
+            buffer.getInt();
 
             // Iterate over on all tokens
-            for (int i = 0; i < length; i++)
+            for (int i = 0; i < tokenCount; i++)
             {
                 // Read vocabulary score
                 this.vocabularyScores[i] = buffer.getFloat();
 
-                System.out.println("Score " + this.vocabularyScores[i]);
-
                 // Read token length
                 int tokenLength = buffer.getInt();
-
-                System.out.println("Len " + tokenLength);
 
                 // Read token
                 byte[] bytes = new byte[tokenLength];
                 buffer.get(bytes);
-
-                System.out.println("B " + bytes);
 
                 this.vocabulary[i] = new String(bytes, StandardCharsets.UTF_8);
             }

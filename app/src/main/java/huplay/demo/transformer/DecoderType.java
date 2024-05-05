@@ -29,7 +29,7 @@ public enum DecoderType
             case ELEUTHERAI_NEO: return new GPTNeoDecoder(config, decoderId);
             case META_LLAMA: return new LlamaDecoder(config, decoderId);
             default:
-                throw new IdentifiedException("Unknown transformer type: " + config.getTransformerType());
+                throw new IdentifiedException("No decoder implementation for this type: " + this.name());
         }
     }
 }

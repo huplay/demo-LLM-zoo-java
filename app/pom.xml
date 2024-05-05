@@ -49,6 +49,37 @@
         </plugins>
     </build>
 
+    <dependencies>
+        <dependency>
+            <groupId>huplay.demo</groupId>
+            <artifactId>demo-llm-util</artifactId>
+            <version>1.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.17.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+            <version>2.17.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
+            <version>4.26.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.13.2</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
     <profiles>
         <profile>
             <id>standard</id>
@@ -56,11 +87,6 @@
                 <activeByDefault>true</activeByDefault>
             </activation>
             <dependencies>
-                <dependency>
-                    <groupId>huplay.demo</groupId>
-                    <artifactId>demo-llm-common-util</artifactId>
-                    <version>1.0</version>
-                </dependency>
                 <dependency>
                     <groupId>huplay.demo</groupId>
                     <artifactId>demo-llm-standard-util</artifactId>
@@ -73,11 +99,6 @@
             <dependencies>
                 <dependency>
                     <groupId>huplay.demo</groupId>
-                    <artifactId>demo-llm-common-util</artifactId>
-                    <version>1.0</version>
-                </dependency>
-                <dependency>
-                    <groupId>huplay.demo</groupId>
                     <artifactId>demo-llm-nd4j-util</artifactId>
                     <version>1.0</version>
                 </dependency>
@@ -86,11 +107,6 @@
         <profile>
             <id>vector-api</id>
             <dependencies>
-                <dependency>
-                    <groupId>huplay.demo</groupId>
-                    <artifactId>demo-llm-common-util</artifactId>
-                    <version>1.0</version>
-                </dependency>
                 <dependency>
                     <groupId>huplay.demo</groupId>
                     <artifactId>demo-llm-vector-api-util</artifactId>

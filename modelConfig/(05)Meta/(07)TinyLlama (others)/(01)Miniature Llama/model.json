@@ -1,7 +1,7 @@
 {
   "name": "Miniature Llama",
   "transformerType": "META_LLAMA",
-  "tokenizerType": "SENTENCE_PIECE",
+  "tokenizerType": "SENTENCE_PIECE/TINY",
   "repo": "https://huggingface.co/noamwies/llama-test-gqa-with-better-transformer",
   "files": ["config.json", "tokenizer.json", "model.safetensors"],
   "transformerParameterNameFormat": "model.{name}",

@@ -15,21 +15,31 @@ public enum TokenizerType
 
     public static Tokenizer getTokenizer(Config config)
     {
-        if (config.getTransformerType() == null)
+        String type = config.getTokenizerType();
+        if (type == null)
         {
             throw new IdentifiedException("Tokenizer type isn't specified");
         }
 
-        TokenizerType tokenizerType = TokenizerType.valueOf(config.getTokenizerType().toUpperCase());
+        type = type.toUpperCase();
+        String variant = "";
+        if (type.contains("/"))
+        {
+            int index = type.indexOf("/");
+            variant = type.substring(index + 1);
+            type = type.substring(0, index);
+        }
+
+        TokenizerType tokenizerType = TokenizerType.valueOf(type);
 
         switch (tokenizerType)
         {
             case OPENAI_GPT_1: return new GPT1Tokenizer(config);
             case OPENAI_GPT_2: return new GPT2Tokenizer(config);
-            case SENTENCE_PIECE: return new SentencePieceTokenizer(config);
+            case SENTENCE_PIECE: return new SentencePieceTokenizer(config, variant);
             case TIKTOKEN:
             default:
-                throw new IdentifiedException("Unknown tokenizer type: " + config.getTokenizerType());
+                throw new IdentifiedException("Unknown tokenizer type: " + type);
         }
     }
 }
