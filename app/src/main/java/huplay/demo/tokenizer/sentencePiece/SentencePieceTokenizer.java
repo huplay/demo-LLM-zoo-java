@@ -2,6 +2,7 @@ package huplay.demo.tokenizer.sentencePiece;
 
 import huplay.demo.IdentifiedException;
 import huplay.demo.config.Config;
+import huplay.demo.tokenizer.Token;
 import huplay.demo.tokenizer.Tokenizer;
 
 import java.io.File;
@@ -49,7 +50,7 @@ public class SentencePieceTokenizer implements Tokenizer
         }
         else
         {
-            initStandard(config, tokenizerFile);
+            initStandard(tokenizerFile);
         }
 
         // Create the vocabulary index, to quickly find the id of a token
@@ -59,7 +60,7 @@ public class SentencePieceTokenizer implements Tokenizer
         }
     }
 
-    protected void initStandard(Config config, File tokenizerFile)
+    protected void initStandard(File tokenizerFile)
     {
         /*
             The tokenizer.model file (which contains the vocabulary and the scores) is a Protocol Buffer file.
@@ -144,45 +145,6 @@ public class SentencePieceTokenizer implements Tokenizer
     }
 
     @Override
-    public String decode(List<Integer> tokens)
-    {
-        StringBuilder buffer = new StringBuilder();
-
-        int prevToken = 0;
-        for (int token : tokens)
-        {
-            buffer.append(decodeToken(prevToken, token));
-            prevToken = token;
-        }
-
-        return buffer.toString();
-    }
-
-    private String decodeToken(int prevToken, Integer token)
-    {
-        String text = vocabulary[token];
-
-        if (text == null)
-        {
-            return "<ERROR>";
-        }
-
-        if (text.length() == 6 && text.startsWith(HEX_TOKEN_PREFIX) && text.endsWith(HEX_TOKEN_SUFFIX))
-        {
-            // If it is a hex token (in the format of <0xNN>), convert the hex value (NN) to character
-            String hex = text.substring(HEX_TOKEN_PREFIX.length(), HEX_TOKEN_PREFIX.length() + 2);
-            text = Character.toString(Integer.parseInt(hex, 16));
-        }
-        else if (prevToken == START_OF_TEXT && text.charAt(0) == ' ')
-        {
-            // If the token is the first one with leading space, remove the space
-            text = text.substring(1);
-        }
-
-        return text;
-    }
-
-    @Override
     public List<Integer> encode(String text)
     {
         if (text == null)
@@ -255,6 +217,117 @@ public class SentencePieceTokenizer implements Tokenizer
 
             // Do the best merge
             tokens.set(bestIndex, bestId);
+            tokens.remove(bestIndex + 1);
+        }
+
+        return tokens;
+    }
+
+    @Override
+    public String decode(List<Integer> tokens)
+    {
+        StringBuilder buffer = new StringBuilder();
+
+        int prevToken = 0;
+        for (int token : tokens)
+        {
+            buffer.append(decodeToken(prevToken, token));
+            prevToken = token;
+        }
+
+        return buffer.toString();
+    }
+
+    private String decodeToken(int prevToken, Integer token)
+    {
+        String text = vocabulary[token];
+
+        if (text == null)
+        {
+            return "<ERROR>";
+        }
+
+        if (text.length() == 6 && text.startsWith(HEX_TOKEN_PREFIX) && text.endsWith(HEX_TOKEN_SUFFIX))
+        {
+            // If it is a hex token (in the format of <0xNN>), convert the hex value (NN) to character
+            String hex = text.substring(HEX_TOKEN_PREFIX.length(), HEX_TOKEN_PREFIX.length() + 2);
+            text = Character.toString(Integer.parseInt(hex, 16));
+        }
+        else if (prevToken == START_OF_TEXT && text.charAt(0) == ' ')
+        {
+            // If the token is the first one with leading space, remove the space
+            text = text.substring(1);
+        }
+
+        return text;
+    }
+
+    @Override
+    public List<Token> split(String text)
+    {
+        if (text == null || text.length() == 0) return Collections.emptyList();
+
+        List<Token> tokens = new ArrayList<>();
+
+        // First encode the text as a sequence of individual unicode characters
+        int codePoint;
+        for (int i = 0; i < text.length(); i += Character.charCount(codePoint))
+        {
+            codePoint = text.codePointAt(i);
+            String character = Character.toString(codePoint);
+
+            int id = getId(character);
+
+            if (id != -1)
+            {
+                // The character is in the vocabulary
+                tokens.add(new Token(id, character));
+            }
+            else
+            {
+                // Rare unicode character, not in the vocabulary. Encode the character as a sequence of bytes
+                // (All single-byte (0-255) and a lot of multibyte characters are in the vocabulary, but not all)
+                // (The single-byte characters are stored after the <unk>, <s>, </s>, that's why the "+ 3")
+                for (byte b : character.getBytes(StandardCharsets.UTF_8))
+                {
+                    tokens.add(new Token(id, "" + (Byte.toUnsignedInt(b) + 3)));
+                }
+            }
+        }
+
+        // Merge pairs of encoded characters into a single token, using the scores to find the best merges
+        while (true)
+        {
+            float bestScore = -1e10f;
+            int bestId = -1;
+            String bestText = "";
+            int bestIndex = -1;
+
+            // Iterate over on the tokens (without the last one)
+            // Find the best merge of token[i] and token[i + 1]
+            for (int i = 0; i < tokens.size() - 1; i++)
+            {
+                String mergedText = vocabulary[tokens.get(i).getId()] + vocabulary[tokens.get(i + 1).getId()];
+                int id = getId(mergedText);
+
+                if (id != -1 && vocabularyScores[id] > bestScore)
+                {
+                    // If this text exists in the vocabulary, and has better score as the best, record it
+                    bestScore = vocabularyScores[id];
+                    bestId = id;
+                    bestText = mergedText;
+                    bestIndex = i;
+                }
+            }
+
+            if (bestIndex == -1)
+            {
+                // There's nothing to merge, we are ready
+                break;
+            }
+
+            // Do the best merge
+            tokens.set(bestIndex, new Token(bestId, bestText));
             tokens.remove(bestIndex + 1);
         }
 

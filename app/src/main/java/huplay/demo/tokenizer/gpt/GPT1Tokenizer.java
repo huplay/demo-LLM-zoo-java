@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import huplay.demo.IdentifiedException;
 import huplay.demo.config.Config;
+import huplay.demo.tokenizer.Token;
 import huplay.demo.tokenizer.Tokenizer;
 
 import java.io.File;
@@ -68,9 +69,33 @@ public class GPT1Tokenizer implements Tokenizer
         merges = MergesReader.readMergesFile(mergesFile, true);
     }
 
+    @Override
     public List<Integer> encode(String text)
     {
         if (text == null) return Collections.singletonList(0);
+
+        List<String> unicodeText = splitToUnicode(text);
+
+        List<Integer> result = new ArrayList<>();
+
+        for (String word : unicodeText)
+        {
+            for (String token : BytePairEncoding.encode(word, merges).split(" "))
+            {
+                Integer id = tokenEncoding.get(token);
+                if (id != null)
+                {
+                    result.add(id);
+                }
+            }
+        }
+
+        return result;
+    }
+
+    private List<String> splitToUnicode(String text)
+    {
+        List<String> unicodeText = new ArrayList<>();
 
         text = text.replace("—", "-");
         text = text.replace("–", "-");
@@ -82,11 +107,7 @@ public class GPT1Tokenizer implements Tokenizer
         //text = re.sub(r"[^\S\n]+", " ", text)
         text = text.toLowerCase().trim();
 
-        List<Integer> result = new ArrayList<>();
-
         Matcher matcher = pattern.matcher(text);
-        List<String> unicodeText = new ArrayList<>();
-
         while (matcher.find())
         {
             StringBuilder match = new StringBuilder();
@@ -102,21 +123,10 @@ public class GPT1Tokenizer implements Tokenizer
             unicodeText.add(match.toString());
         }
 
-        for (String word : unicodeText)
-        {
-            for (String token : BytePairEncoding.encode(word, merges).split(" "))
-            {
-                Integer value = tokenEncoding.get(token);
-                if (value != null)
-                {
-                    result.add(value);
-                }
-            }
-        }
-
-        return result;
+        return unicodeText;
     }
 
+    @Override
     public String decode(List<Integer> tokens)
     {
         StringBuilder textBuilder = new StringBuilder();
@@ -135,6 +145,36 @@ public class GPT1Tokenizer implements Tokenizer
             }
         }
         return textBuilder.toString();
+    }
+
+    @Override
+    public List<Token> split(String text)
+    {
+        if (text == null || text.length() == 0) return Collections.emptyList();
+
+        List<String> unicodeText = splitToUnicode(text);
+
+        List<Token> result = new ArrayList<>();
+
+        String prefix = "";
+        for (String word : unicodeText)
+        {
+            for (String token : BytePairEncoding.encode(word, merges).split(" "))
+            {
+                Integer id = tokenEncoding.get(token);
+                if (id != null)
+                {
+                    result.add(new Token(id, prefix + token));
+                    prefix = "";
+                }
+                else
+                {
+                    prefix = " ";
+                }
+            }
+        }
+
+        return result;
     }
 
     private void addCharRange(int pos, int firstChar, int lastChar)

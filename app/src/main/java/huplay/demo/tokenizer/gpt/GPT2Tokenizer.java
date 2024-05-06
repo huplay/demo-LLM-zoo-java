@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import huplay.demo.IdentifiedException;
 import huplay.demo.config.Config;
+import huplay.demo.tokenizer.Token;
 import huplay.demo.tokenizer.Tokenizer;
 
 import java.io.File;
@@ -68,29 +69,14 @@ public class GPT2Tokenizer implements Tokenizer
         merges = MergesReader.readMergesFile(mergesFile, true);
     }
 
+    @Override
     public List<Integer> encode(String text)
     {
         if (text == null) return Collections.singletonList(0);
 
+        List<String> unicodeText = splitToUnicode(text);
+
         List<Integer> result = new ArrayList<>();
-
-        Matcher matcher = pattern.matcher(text);
-        List<String> unicodeText = new ArrayList<>();
-
-        while (matcher.find())
-        {
-            StringBuilder match = new StringBuilder();
-
-            ByteBuffer buffer = StandardCharsets.UTF_8.encode(matcher.group());
-            while (buffer.hasRemaining())
-            {
-                int value = buffer.get();
-                if (value < 0) value = value & 0xff;
-                match.append(charDecoding.get(value));
-            }
-
-            unicodeText.add(match.toString());
-        }
 
         for (String word : unicodeText)
         {
@@ -107,6 +93,30 @@ public class GPT2Tokenizer implements Tokenizer
         return result;
     }
 
+    private List<String> splitToUnicode(String text)
+    {
+        List<String> unicodeText = new ArrayList<>();
+
+        Matcher matcher = pattern.matcher(text);
+        while (matcher.find())
+        {
+            StringBuilder match = new StringBuilder();
+
+            ByteBuffer buffer = StandardCharsets.UTF_8.encode(matcher.group());
+            while (buffer.hasRemaining())
+            {
+                int value = buffer.get();
+                if (value < 0) value = value & 0xff;
+                match.append(charDecoding.get(value));
+            }
+
+            unicodeText.add(match.toString());
+        }
+
+        return unicodeText;
+    }
+
+    @Override
     public String decode(List<Integer> tokens)
     {
         StringBuilder textBuilder = new StringBuilder();
@@ -123,6 +133,30 @@ public class GPT2Tokenizer implements Tokenizer
         }
 
         return new String(bytes, StandardCharsets.UTF_8);
+    }
+
+    @Override
+    public List<Token> split(String text)
+    {
+        if (text == null || text.length() == 0) return Collections.emptyList();
+
+        List<String> unicodeText = splitToUnicode(text);
+
+        List<Token> result = new ArrayList<>();
+
+        for (String word : unicodeText)
+        {
+            for (String token : BytePairEncoding.encode(word, merges).split(" "))
+            {
+                Integer id = tokenEncoding.get(token);
+                if (id != null)
+                {
+                    result.add(new Token(id, token.replace("Ġ", " ")));
+                }
+            }
+        }
+
+        return result;
     }
 
     private void addCharRange(int pos, int firstChar, int lastChar)

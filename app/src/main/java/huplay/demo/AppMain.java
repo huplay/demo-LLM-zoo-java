@@ -2,6 +2,7 @@ package huplay.demo;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import huplay.demo.config.*;
+import huplay.demo.tokenizer.Token;
 import huplay.demo.tokenizer.Tokenizer;
 import huplay.demo.tokenizer.TokenizerType;
 import huplay.demo.transformer.BaseTransformer;
@@ -87,20 +88,38 @@ public class AppMain
 
                 List<Integer> inputTokens = new ArrayList<>();
 
-                // If the input starts with "+" continue the same session
-                if (inputText.equals("+")) inputTokens.add(lastToken);
-                else if (inputText.startsWith("+"))
+                if (inputText.equals("+"))
                 {
-                    inputTokens.addAll(tokenizer.encode(inputText.substring(1)));
+                    // If the input is "+", continue the generation as usual (adding the last output to the input)
+                    inputTokens.add(lastToken);
                 }
                 else
                 {
-                    // Convert the input text into list of tokens
-                    inputTokens = tokenizer.encode(inputText);
+                    if (inputText.startsWith("+"))
+                    {
+                        // Input starts with "+" is a request to continue the same session
+                        // Remove the "+", and don't clear the position and stored values
+                        inputText = inputText.substring(1);
+                    }
+                    else
+                    {
+                        // Clear the transformer's stored values
+                        pos = 0;
+                        processor.clear();
+                    }
 
-                    // Clear the transformer's stored values
-                    pos = 0;
-                    processor.clear();
+                    // Convert the input text into list of tokens
+                    inputTokens.addAll(tokenizer.encode(inputText));
+
+                    // Display the coloured version of the input to show the tokens
+                    List<Token> split = tokenizer.split(inputText);
+                    OUT.print("            ");
+                    for (int i = 0; i < split.size(); i++)
+                    {
+                        String color = i % 2 == 0 ? "\033[32m" : "\033[33m";
+                        OUT.print(color + split.get(i).getText().replace("\n", "").replace("\r", ""));
+                    }
+                    OUT.println("\033[0m");
                 }
 
                 // Use the Transformer
