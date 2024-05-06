@@ -35,7 +35,7 @@ public abstract class BaseTransformer extends ParameterStore
     /**
      * Process a single token
      */
-    public abstract float[] execute(int pos, float[] embedding, boolean isOutputProcessing);
+    public abstract float[] execute(int pos, int token, boolean isOutputProcessing);
 
     /**
      * Clear stored values in all decoders to start a new session

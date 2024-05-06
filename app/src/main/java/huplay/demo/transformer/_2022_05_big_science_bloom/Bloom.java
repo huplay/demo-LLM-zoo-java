@@ -36,10 +36,13 @@ public class Bloom extends BaseTransformer
         loadVector(OUTPUT_NORM_BIAS, "ln_f.bias", hiddenSize);
     }
 
-    public float[] execute(int pos, float[] embedding, boolean isOutputProcessing)
+    public float[] execute(int pos, int token, boolean isOutputProcessing)
     {
+        // Find the embeddings of the token
+        float[] hiddenState = matrix(TOKEN_EMBEDDINGS)[token];
+
         // Input normalization
-        float[] hiddenState = layerNorm(embedding,  vector(INPUT_NORM_WEIGHT), vector(INPUT_NORM_BIAS), epsilon);
+        hiddenState = layerNorm(hiddenState,  vector(INPUT_NORM_WEIGHT), vector(INPUT_NORM_BIAS), epsilon);
 
         // Decoder stack
         for (BaseDecoder decoder : decoders)

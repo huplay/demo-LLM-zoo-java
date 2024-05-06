@@ -4,6 +4,7 @@ public enum ParameterType
 {
     // Input
     TOKEN_EMBEDDINGS,
+    TOKEN_EMBEDDING_BIAS,
     POSITION_EMBEDDINGS,
 
     INPUT_NORM_WEIGHT,

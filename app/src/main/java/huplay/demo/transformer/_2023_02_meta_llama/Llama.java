@@ -33,8 +33,11 @@ public class Llama extends BaseTransformer
         loadVector(OUTPUT_NORM_WEIGHT, "norm.weight", hiddenSize);
     }
 
-    public float[] execute(int pos, float[] hiddenState, boolean isOutputProcessing)
+    public float[] execute(int pos, int token, boolean isOutputProcessing)
     {
+        // Find the embeddings of the token
+        float[] hiddenState = matrix(TOKEN_EMBEDDINGS)[token];
+
         // Decoder stack
         for (BaseDecoder decoder : decoders)
         {

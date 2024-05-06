@@ -25,7 +25,7 @@ public class GPTNeo extends BaseTransformer
 {
     public GPTNeo(Config config)
     {
-        super(config, DecoderType.ELEUTHERAI_NEO);
+        super(config, DecoderType.ELEUTHERAI_GPT_NEO);
 
         // Load parameters
         loadMatrix(TOKEN_EMBEDDINGS, "wte.weight", tokenCount, hiddenSize);
@@ -34,10 +34,13 @@ public class GPTNeo extends BaseTransformer
         loadVector(OUTPUT_NORM_BIAS, "ln_f.bias", hiddenSize);
     }
 
-    public float[] execute(int pos, float[] embedding, boolean isOutputProcessing)
+    public float[] execute(int pos, int token, boolean isOutputProcessing)
     {
+        // Find the embeddings of the token
+        float[] hiddenState = matrix(TOKEN_EMBEDDINGS)[token];
+
         // Position embedding
-        float[] hiddenState = UTIL.addVectors(embedding, matrix(POSITION_EMBEDDINGS)[pos]);
+        hiddenState = UTIL.addVectors(hiddenState, matrix(POSITION_EMBEDDINGS)[pos]);
 
         // Decoder stack
         for (BaseDecoder decoder : decoders)

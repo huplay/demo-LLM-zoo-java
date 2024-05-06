@@ -27,7 +27,7 @@ public class Logo
 
         for (int i = 0; i < logo.length; i++)
         {
-            if ((i == 0 || i < logo.length - 1) && hasNonSpace(logo[i]))
+            if ((i == 0 || i < logo.length - 1) && hasNonSpace(logo[i])) // First and last line isn't displayed if empty
             {
                 OUT.println(logo[i]);
             }

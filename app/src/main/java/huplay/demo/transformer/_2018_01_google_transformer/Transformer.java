@@ -45,8 +45,11 @@ public class Transformer extends BaseTransformer
         this.positionMatrix = calculatePositionMatrix();
     }
 
-    public float[] execute(int pos, float[] hiddenState, boolean isOutputProcessing)
+    public float[] execute(int pos, int token, boolean isOutputProcessing)
     {
+        // Find the embeddings of the token
+        float[] hiddenState = matrix(TOKEN_EMBEDDINGS)[token];
+
         // Position embedding
         for (int i = 0; i < hiddenState.length; i++)
         {

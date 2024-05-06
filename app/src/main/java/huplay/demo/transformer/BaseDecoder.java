@@ -56,7 +56,10 @@ public abstract class BaseDecoder extends ParameterStore
             }
         }
 
-        String formattedName = config.getDecoderParameterNameFormat().replace("{decoderId}", "" + decoderId);
+        String decoder = "" + decoderId;
+        name = name.replace("{decoderId}", decoder);
+
+        String formattedName = config.getDecoderParameterNameFormat().replace("{decoderId}", decoder);
         return formattedName.replace("{name}", name);
     }
 }

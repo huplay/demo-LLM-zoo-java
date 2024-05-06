@@ -2,13 +2,13 @@ package huplay.demo;
 
 import huplay.demo.util.IndexedValue;
 import huplay.demo.config.Config;
-import huplay.demo.config.ParameterType;
 import huplay.demo.tokenizer.Tokenizer;
 import huplay.demo.transformer.BaseTransformer;
 
 import java.util.*;
 import static huplay.demo.AppMain.OUT;
 import static huplay.demo.AppLoader.UTIL;
+import static huplay.demo.config.ParameterType.TOKEN_EMBEDDINGS;
 
 /**
  * Decoder-only Transformer implementation
@@ -18,14 +18,12 @@ public class Generate
     private final Config config;
     private final Tokenizer tokenizer;
     private final BaseTransformer transformer;
-    private final float[][] tokenEmbeddings;
 
     public Generate(Config config, Tokenizer tokenizer, BaseTransformer transformer)
     {
         this.config = config;
         this.tokenizer = tokenizer;
         this.transformer = transformer;
-        this.tokenEmbeddings = transformer.matrix(ParameterType.TOKEN_EMBEDDINGS);
     }
 
     /**
@@ -51,8 +49,7 @@ public class Generate
             for (int pos = 0; pos < intputSize - 1; pos++)
             {
                 OUT.print("."); // Printing a dot to show there is a progress
-                float[] embedding = tokenEmbeddings[inputTokens.get(pos)];
-                transformer.execute(pos + startPos, embedding, false);
+                transformer.execute(pos + startPos, inputTokens.get(pos), false);
             }
         }
 
@@ -64,8 +61,7 @@ public class Generate
         for (int pos = intputSize - 1; pos < config.getLengthLimit() + intputSize; pos++)
         {
             // Add the last input token or the previously generated new token as input
-            float[] embedding = tokenEmbeddings[token];
-            float[] hiddenState = transformer.execute(pos + startPos, embedding, true);
+            float[] hiddenState = transformer.execute(pos + startPos, token, true);
 
             token = determineOutputToken(hiddenState);
             result.add(token);
@@ -84,7 +80,7 @@ public class Generate
     {
         // Multiply (dot product) the output with all token embeddings.
         // It will give a higher value if the output is more similar to the token embedding
-        float[] logits = UTIL.mulVectorByTransposedMatrix(hiddenState, tokenEmbeddings);
+        float[] logits = UTIL.mulVectorByTransposedMatrix(hiddenState, transformer.matrix(TOKEN_EMBEDDINGS));
 
         // Sort (higher to lower) the result of the dot products, retaining the order (index) of the related token
         List<IndexedValue> orderedLogits = UTIL.reverseAndFilter(logits, config.getTopK());

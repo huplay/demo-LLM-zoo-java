@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import huplay.demo.IdentifiedException;
 
 import java.io.File;
@@ -27,8 +26,8 @@ public class Config
     @JsonAlias({"n_embd", "hidden_size", "n_embed"})
     private int hiddenSize;
 
-    @JsonAlias({"intermediate_size", "n_inner"}) @JsonSerialize()
-    private int feedForwardSize;
+    @JsonAlias({"intermediate_size", "n_inner"})
+    private Integer feedForwardSize;
 
     @JsonAlias({"n_layer", "num_hidden_layers", "num_layers"})
     private int decoderCount;
@@ -67,7 +66,7 @@ public class Config
             config.modelConfig = modelConfig;
             config.reader = new ParameterReader(config);
 
-            if (config.feedForwardSize == 0)
+            if (config.feedForwardSize == null)
             {
                 // If the feed forward size isn't configured set it as 4 times of the hidden size
                 config.feedForwardSize = 4 * config.hiddenSize;

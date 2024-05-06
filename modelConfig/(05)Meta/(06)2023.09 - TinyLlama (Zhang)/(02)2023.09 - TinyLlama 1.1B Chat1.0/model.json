@@ -3,7 +3,7 @@
   "transformerType": "META_LLAMA",
   "tokenizerType": "SENTENCE_PIECE",
   "repo": "https://huggingface.co/TinyLlama/TinyLlama-1.1B-Chat-v0.4",
-  "files": ["config.json", "tokenizer.json", "model.safetensors"],
+  "files": ["config.json", "tokenizer.model", "model.safetensors"],
   "transformerParameterNameFormat": "model.{name}",
   "decoderParameterNameFormat": "model.layers.{decoderId}.{name}",
   "memorySize": 11264

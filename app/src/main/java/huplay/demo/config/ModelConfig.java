@@ -52,6 +52,16 @@ public class ModelConfig
                 modelConfig.fileNameOverrides = new HashMap<>();
             }
 
+            if (modelConfig.transformerParameterNameFormat == null)
+            {
+                modelConfig.transformerParameterNameFormat = "{name}";
+            }
+
+            if (modelConfig.decoderParameterNameFormat == null)
+            {
+                modelConfig.decoderParameterNameFormat = "{name}";
+            }
+
             if (modelConfig.parameterNameOverrides == null)
             {
                 modelConfig.parameterNameOverrides = new HashMap<>();

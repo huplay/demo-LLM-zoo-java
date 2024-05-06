@@ -106,7 +106,7 @@ public class LlamaDecoder extends BaseDecoder
         float[][] keyByHead = UTIL.splitVector(key, headCount);
         float[][] valueByHead = UTIL.splitVector(value, headCount);
 
-        // Position embedding
+        // Position embedding (RoPE)
         applyPosition(query, key);
 
         // Store the keys and values (these will be available while the following tokens will be processed)
@@ -192,7 +192,7 @@ public class LlamaDecoder extends BaseDecoder
         float[][] keyByGroup = UTIL.splitVector(key, headCount / kvHeadSize);
         float[][] valueByGroup = UTIL.splitVector(value, headCount / kvHeadSize);
 
-        // Position embedding
+        // Position embedding (RoPE)
         applyGroupedPosition(query, key);
 
         // Store the keys and values (these will be available while the following tokens will be processed)

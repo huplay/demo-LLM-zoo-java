@@ -27,10 +27,13 @@ public class GPT1 extends BaseTransformer
         loadMatrix(POSITION_EMBEDDINGS, "positions_embed.weight", contextSize, hiddenSize);
     }
 
-    public float[] execute(int pos, float[] embedding, boolean isOutputProcessing)
+    public float[] execute(int pos, int token, boolean isOutputProcessing)
     {
+        // Find the embeddings of the token
+        float[] hiddenState = matrix(TOKEN_EMBEDDINGS)[token];
+
         // Position embedding
-        float[] hiddenState = UTIL.addVectors(embedding, matrix(POSITION_EMBEDDINGS)[pos]);
+        hiddenState = UTIL.addVectors(hiddenState, matrix(POSITION_EMBEDDINGS)[pos]);
 
         // Decoder stack
         for (BaseDecoder decoder : decoders)
