@@ -4,7 +4,7 @@
   "tokenizerType": "OPENAI_GPT_2",
   "repo": "https://huggingface.co/cerebras/Cerebras-GPT-256M",
   "files": ["config.json", "vocab.json", "merges.txt", "model.safetensors"],
-  "transformerParameterNameFormat": "transformer.{name}",
-  "decoderParameterNameFormat": "transformer.h.{decoderId}.{name}",
+  "parameterNaming": "transformer.{name}",
+  "decoderParameterNaming": "transformer.h.{decoderId}.{name}",
   "memorySize": 2048
 }

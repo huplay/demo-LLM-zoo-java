@@ -5,7 +5,7 @@
   "repo": "https://huggingface.co/xhyi/PT_GPTNEO350_ATG",
   "branch": "refs%2Fpr%2F1",
   "files": ["config.json", "vocab.json", "merges.txt", "model.safetensors"],
-  "transformerParameterNameFormat": "transformer.{name}",
-  "decoderParameterNameFormat": "transformer.h.{decoderId}.{name}",
+  "parameterNaming": "transformer.{name}",
+  "decoderParameterNaming": "transformer.h.{decoderId}.{name}",
   "memorySize": 2048
 }

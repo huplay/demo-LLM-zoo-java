@@ -1,5 +1,8 @@
 package huplay.demo.config;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import huplay.demo.IdentifiedException;
 
 import java.io.*;
@@ -9,184 +12,73 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import static huplay.demo.AppLoader.UTIL;
+import static huplay.demo.config.SafetensorsModel.TensorModel;
 
 /**
  * Reader of the trained parameters
  */
 public class ParameterReader
 {
-    private static final String METADATA_KEY = "__metadata__";
-    private static final String FORMAT_KEY = "format";
-    private static final String DATA_TYPE_KEY = "dtype";
-    private static final String SHAPE_KEY = "shape";
-    private static final String OFFSETS_KEY = "data_offsets";
-
-    private final Config config;
-
     private final Map<String, ParameterDescriptor> parameterDescriptors = new HashMap<>();
 
-    public ParameterReader(Config config)
+    public ParameterReader(String modelPath)
     {
-        this.config = config;
-
         // Read the header(s) of the safetensors parameter file(s)
-        File modelFolder = new File(config.getModelPath());
+        File modelFolder = new File(modelPath);
 
-        if (modelFolder == null || !modelFolder.isDirectory())
+        if (!modelFolder.isDirectory())
         {
-            throw new IdentifiedException("Model folder not found: " + config.getModelPath());
+            throw new IdentifiedException("Model folder not found: " + modelPath);
         }
-
 
         for (File file : modelFolder.listFiles())
         {
             if (file.isFile() && file.getName().endsWith("safetensors"))
             {
-                readDescriptor(file.getName());
+                readSafetensorsModel(modelPath + "/" + file.getName());
             }
         }
     }
 
-    private void readDescriptor(String fileName)
+    public void readSafetensorsModel(String fileName)
     {
-        fileName = config.getModelPath() + "/" + fileName;
-
         long headerSize = readHeaderSize(fileName);
         String header = readHeader(fileName, headerSize);
 
-        int index = 0;
+        Map<String, TensorModel> tensors = new HashMap<>();
 
-        String rawMetadata = null;
-        Map<String, String> rawEntries = new HashMap<>();
-
-        while (true)
+        try
         {
-            int start = header.indexOf('"', index);
-
-            if (start < 0)
-            {
-                break;
-            }
-
-            int end = header.indexOf('"', start + 1);
-
-            String key = header.substring(start + 1, end);
-
-            start = header.indexOf('{', end + 1);
-            index = header.indexOf('}', start + 1);
-
-            String value = header.substring(start + 1, index);
-
-            if (key.equals(METADATA_KEY))
-            {
-                rawMetadata = value;
-            }
-            else
-            {
-                rawEntries.put(key, value);
-            }
-
-            if (index == headerSize - 1)
-            {
-                break;
-            }
+            TypeReference<Map<String, TensorModel>> typeRef = new TypeReference<>(){};
+            tensors.putAll(new ObjectMapper().readValue(header, typeRef));
+        }
+        catch (JsonProcessingException e)
+        {
+            throw new IdentifiedException("Parameter file read error. (" + fileName + ")", e);
         }
 
-        String format = readFormat(rawMetadata);
-
-        for (Map.Entry<String, String> entry : rawEntries.entrySet())
+        for (Map.Entry<String, TensorModel> entry : tensors.entrySet())
         {
             String id = entry.getKey();
-            String value = entry.getValue();
 
-            DataType dataType = readDataType(value);
-            List<Long> shape = readShape(value);
-            long[] offsets = readOffsets(value);
+            if (id.equals("__metadata__")) continue;
 
-            if (offsets == null || offsets.length != 2)
+            TensorModel tensor = entry.getValue();
+
+            DataType dataType = DataType.valueOf(tensor.getDataType());
+            List<Integer> shape = tensor.getShape();
+            List<Long> offsets = tensor.getDataOffsets();
+
+            if (offsets == null || offsets.size() != 2)
             {
                 throw new IdentifiedException("Parameter file read error. (" + id + ")");
             }
 
-            ParameterDescriptor descriptor = new ParameterDescriptor(fileName, id, headerSize + 8, format,
-                    dataType, shape, offsets[0], offsets[1]);
+            ParameterDescriptor descriptor = new ParameterDescriptor(fileName, id, headerSize + 8, "pt",
+                    dataType, shape, offsets.get(0), offsets.get(1));
 
             parameterDescriptors.put(id, descriptor);
         }
-    }
-
-    private String readFormat(String value)
-    {
-        if (value == null)
-        {
-            return null;
-        }
-
-        int start = value.indexOf("\"" + FORMAT_KEY + "\"");
-
-        if (start < 0) return null;
-
-        start = value.indexOf('"', start + FORMAT_KEY.length() + 2);
-        int end = value.indexOf('"', start + 1);
-
-        return value.substring(start + 1, end);
-    }
-
-    private DataType readDataType(String value)
-    {
-        int start = value.indexOf("\"" + DATA_TYPE_KEY + "\"");
-
-        if (start < 0) return null;
-
-        start = value.indexOf('"', start + DATA_TYPE_KEY.length() + 2);
-        int end = value.indexOf('"', start + 1);
-
-        String dtype = value.substring(start + 1, end);
-
-        return DataType.valueOf(dtype);
-    }
-
-    private List<Long> readShape(String value)
-    {
-        int start = value.indexOf("\"" + SHAPE_KEY + "\"");
-
-        if (start < 0) return null;
-
-        start = value.indexOf('[', start + OFFSETS_KEY.length() + 2);
-        int end = value.indexOf(']', start + 1);
-
-        String shape = value.substring(start + 1, end);
-
-        String[] parts = shape.split(",");
-
-        List<Long> result = new ArrayList<>(parts.length);
-
-        for (String part : parts)
-        {
-            result.add(Long.parseLong(part));
-        }
-
-        return result;
-    }
-
-    private long[] readOffsets(String value)
-    {
-        int start = value.indexOf("\"" + OFFSETS_KEY + "\"");
-
-        if (start < 0) return null;
-
-        start = value.indexOf('[', start + OFFSETS_KEY.length() + 2);
-        int end = value.indexOf(']', start + 1);
-
-        String offsets = value.substring(start + 1, end);
-
-        String[] parts = offsets.split(",");
-
-        long[] result = new long[2];
-        result[0] = Long.parseLong(parts[0]);
-        result[1] = Long.parseLong(parts[1]);
-
-        return result;
     }
 
     private long readHeaderSize(String fileName)

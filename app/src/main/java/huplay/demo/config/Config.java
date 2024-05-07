@@ -49,7 +49,7 @@ public class Config
 
     private Map<String, Object> allEntries;
 
-    public static Config read(Arguments arguments, ModelConfig modelConfig, ObjectMapper objectMapper)
+    public static Config readConfig(Arguments arguments, ModelConfig modelConfig, ParameterReader reader)
     {
         File configFile = modelConfig.findFile("config.json");
 
@@ -60,26 +60,20 @@ public class Config
 
         try
         {
+            ObjectMapper objectMapper = new ObjectMapper();
             Config config = objectMapper.readValue(configFile, Config.class);
 
             config.arguments = arguments;
             config.modelConfig = modelConfig;
-            config.reader = new ParameterReader(config);
+            config.reader = reader;
 
-            if (config.feedForwardSize == null)
-            {
-                // If the feed forward size isn't configured set it as 4 times of the hidden size
-                config.feedForwardSize = 4 * config.hiddenSize;
-            }
+            // If the feed forward size isn't configured set it as 4 times of the hidden size
+            if (config.feedForwardSize == null) config.feedForwardSize = 4 * config.hiddenSize;
 
-            if (config.contextSize == 0)
-            {
-                // At some models the context size is unlimited, so this value isn't configured. Set it to max possible.
-                config.contextSize = Integer.MAX_VALUE;
-            }
+            // At some models the context size is unlimited, so this value isn't configured. Set it to max possible.
+            if (config.contextSize == 0) config.contextSize = Integer.MAX_VALUE;
 
             TypeReference<Map<String, Object>> typeRef = new TypeReference<>() {};
-
             config.allEntries = objectMapper.readValue(configFile, typeRef);
 
             return config;
@@ -165,8 +159,8 @@ public class Config
     public String getBranch() {return modelConfig.getBranch();}
     public List<String> getFiles() {return modelConfig.getFiles();}
     public Map<String, String> getFileNameOverrides() {return modelConfig.getFileNameOverrides();}
-    public String getTransformerParameterNameFormat() {return modelConfig.getTransformerParameterNameFormat();}
-    public String getDecoderParameterNameFormat() {return modelConfig.getDecoderParameterNameFormat();}
+    public String getParameterNaming() {return modelConfig.getParameterNaming();}
+    public String getDecoderNameFormat() {return modelConfig.getDecoderParameterNaming();}
     public Map<String, String> getParameterNameOverrides() {return modelConfig.getParameterNameOverrides();}
     public Integer getMemorySize() {return modelConfig.getMemorySize();}
 

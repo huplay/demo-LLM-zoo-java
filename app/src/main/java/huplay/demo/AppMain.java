@@ -1,6 +1,5 @@
 package huplay.demo;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import huplay.demo.config.*;
 import huplay.demo.tokenizer.Token;
 import huplay.demo.tokenizer.Tokenizer;
@@ -9,7 +8,9 @@ import huplay.demo.transformer.BaseTransformer;
 import huplay.demo.transformer.TransformerType;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -19,7 +20,6 @@ import static huplay.demo.AppLoader.checkFiles;
 public class AppMain
 {
     public static final PrintStream OUT = getPrintStream();
-    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     public static void main(String... args)
     {
@@ -43,7 +43,7 @@ public class AppMain
                     OUT.println(element.toString());
                 }
             }
-            OUT.println("ERROR: " + e.getMessage() + " " + e.getStackTrace());
+            OUT.println("ERROR: " + e.getMessage() + " " + Arrays.toString(e.getStackTrace()));
         }
     }
 
@@ -53,7 +53,7 @@ public class AppMain
         Arguments arguments = Arguments.readArguments(args);
 
         // Read the modelConfig of the selected model
-        ModelConfig modelConfig = ModelConfig.read(arguments, objectMapper);
+        ModelConfig modelConfig = ModelConfig.read(arguments);
 
         // Check necessary files
         List<String> missingFiles = checkFiles(modelConfig, arguments.getModelPath());
@@ -62,8 +62,11 @@ public class AppMain
             throw new IdentifiedException("There are missing files: " + missingFiles);
         }
 
+        // Create the parameter reader
+        ParameterReader reader = new ParameterReader(arguments.getModelPath());
+
         // Read the config (first look into the model folder, second to the config folder (maybe it's different)
-        Config config = Config.read(arguments, modelConfig, objectMapper);
+        Config config = Config.readConfig(arguments, modelConfig, reader);
 
         displayConfig(config, 0);
 
@@ -88,7 +91,11 @@ public class AppMain
 
                 List<Integer> inputTokens = new ArrayList<>();
 
-                if (inputText.equals("+"))
+                if (inputText == null)
+                {
+                    break;
+                }
+                else if (inputText.equals("+"))
                 {
                     // If the input is "+", continue the generation as usual (adding the last output to the input)
                     inputTokens.add(lastToken);
@@ -183,7 +190,7 @@ public class AppMain
     {
         try
         {
-            return new PrintStream(System.out, true, "utf-8");
+            return new PrintStream(System.out, true, StandardCharsets.UTF_8);
         }
         catch (Exception e)
         {

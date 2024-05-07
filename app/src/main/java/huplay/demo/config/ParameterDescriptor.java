@@ -9,12 +9,12 @@ public class ParameterDescriptor
     private final long dataOffset;
     private final String format;
     private final DataType dataType;
-    private final List<Long> shape;
+    private final List<Integer> shape;
     private final long startOffset;
     private final long endOffset;
 
     public ParameterDescriptor(String fileName, String id, long dataOffset, String format, DataType dataType,
-                               List<Long> shape, long startOffset, long endOffset)
+                               List<Integer> shape, long startOffset, long endOffset)
     {
         this.fileName = fileName;
         this.id = id;
@@ -31,40 +31,14 @@ public class ParameterDescriptor
         return fileName;
     }
 
-    public String getId()
-    {
-        return id;
-    }
-
-    public long getDataOffset()
-    {
-        return dataOffset;
-    }
-
-    public String getFormat()
-    {
-        return format;
-    }
-
-    public DataType getDataType()
-    {
-        return dataType;
-    }
-
-    public List<Long> getShape()
-    {
-        return shape;
-    }
-
-    public long getStartOffset()
-    {
-        return startOffset;
-    }
-
-    public long getEndOffset()
-    {
-        return endOffset;
-    }
+    // Getters
+    public String getId() {return id;}
+    public long getDataOffset() {return dataOffset;}
+    public String getFormat() {return format;}
+    public DataType getDataType() {return dataType;}
+    public List<Integer> getShape() {return shape;}
+    public long getStartOffset() {return startOffset;}
+    public long getEndOffset() {return endOffset;}
 
     public long getSizeInBytes()
     {

@@ -60,9 +60,9 @@ public abstract class BaseTransformer extends ParameterStore
             }
         }
 
-        if (config.getTransformerParameterNameFormat() != null)
+        if (config.getParameterNaming() != null)
         {
-            name = config.getTransformerParameterNameFormat().replace("{name}", name);
+            name = config.getParameterNaming().replace("{name}", name);
         }
 
         return name;

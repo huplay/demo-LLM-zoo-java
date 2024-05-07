@@ -26,12 +26,12 @@ public class ModelConfig
     private String branch;
     private List<String> files;
     private Map<String, String> fileNameOverrides;
-    private String transformerParameterNameFormat;
-    private String decoderParameterNameFormat;
+    private String parameterNaming;
+    private String decoderParameterNaming;
     private Map<String, String> parameterNameOverrides;
     private Integer memorySize;
 
-    public static ModelConfig read(Arguments arguments, ObjectMapper objectMapper)
+    public static ModelConfig read(Arguments arguments)
     {
         String modelConfigJson = arguments.getConfigPath() + "/model.json";
 
@@ -43,29 +43,8 @@ public class ModelConfig
 
         try
         {
-            ModelConfig modelConfig = objectMapper.readValue(modelConfigFile, ModelConfig.class);
-
-            modelConfig.arguments = arguments;
-
-            if (modelConfig.fileNameOverrides == null)
-            {
-                modelConfig.fileNameOverrides = new HashMap<>();
-            }
-
-            if (modelConfig.transformerParameterNameFormat == null)
-            {
-                modelConfig.transformerParameterNameFormat = "{name}";
-            }
-
-            if (modelConfig.decoderParameterNameFormat == null)
-            {
-                modelConfig.decoderParameterNameFormat = "{name}";
-            }
-
-            if (modelConfig.parameterNameOverrides == null)
-            {
-                modelConfig.parameterNameOverrides = new HashMap<>();
-            }
+            ModelConfig modelConfig = new ObjectMapper().readValue(modelConfigFile, ModelConfig.class);
+            modelConfig.init(arguments);
 
             return modelConfig;
         }
@@ -73,6 +52,19 @@ public class ModelConfig
         {
             throw new IdentifiedException("Cannot read model.json (" + modelConfigJson + ")");
         }
+    }
+
+    private void init(Arguments arguments)
+    {
+        this.arguments = arguments;
+
+        if (fileNameOverrides == null) fileNameOverrides = new HashMap<>();
+
+        if (parameterNaming == null) parameterNaming = "{name}";
+
+        if (decoderParameterNaming == null) decoderParameterNaming = "{decoderId}.{name}";
+
+        if (parameterNameOverrides == null) parameterNameOverrides = new HashMap<>();
     }
 
     // Getters
@@ -83,8 +75,8 @@ public class ModelConfig
     public String getBranch() {return branch;}
     public List<String> getFiles() {return files;}
     public Map<String, String> getFileNameOverrides() {return fileNameOverrides;}
-    public String getTransformerParameterNameFormat() {return transformerParameterNameFormat;}
-    public String getDecoderParameterNameFormat() {return decoderParameterNameFormat;}
+    public String getParameterNaming() {return parameterNaming;}
+    public String getDecoderParameterNaming() {return decoderParameterNaming;}
     public Map<String, String> getParameterNameOverrides() {return parameterNameOverrides;}
     public Integer getMemorySize() {return memorySize;}
 

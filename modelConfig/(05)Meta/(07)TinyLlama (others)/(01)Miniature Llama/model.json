@@ -4,6 +4,6 @@
   "tokenizerType": "SENTENCE_PIECE/TINY",
   "repo": "https://huggingface.co/noamwies/llama-test-gqa-with-better-transformer",
   "files": ["config.json", "tokenizer.json", "model.safetensors"],
-  "transformerParameterNameFormat": "model.{name}",
-  "decoderParameterNameFormat": "model.layers.{decoderId}.{name}",
+  "parameterNaming": "model.{name}",
+  "decoderParameterNaming": "model.layers.{decoderId}.{name}",
 }

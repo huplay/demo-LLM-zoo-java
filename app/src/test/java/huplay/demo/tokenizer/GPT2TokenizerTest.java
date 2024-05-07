@@ -1,7 +1,6 @@
-package huplay.demo;
+package huplay.demo.tokenizer;
 
 import huplay.demo.tokenizer.gpt.GPT2Tokenizer;
-import huplay.demo.tokenizer.Tokenizer;
 import org.junit.Ignore;
 import org.junit.Test;
 

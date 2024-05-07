@@ -1,7 +1,7 @@
 package huplay.demo;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import huplay.demo.config.ModelConfig;
+import huplay.demo.config.ParameterReader;
 import huplay.demo.transformer.TransformerType;
 import huplay.demo.transformer.BaseTransformer;
 import huplay.demo.util.Util;
@@ -20,7 +20,6 @@ public class AppLoader
 {
     public static final PrintStream OUT = getPrintStream();
     public static final Util UTIL = new Util();
-    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     public static void main(String... args)
     {
@@ -48,7 +47,7 @@ public class AppLoader
         }
 
         // Read the modelConfig of the selected model
-        ModelConfig modelConfig = ModelConfig.read(arguments, objectMapper);
+        ModelConfig modelConfig = ModelConfig.read(arguments);
 
         // Check necessary files
         List<String> missingFiles = checkFiles(modelConfig, arguments.getModelPath());
@@ -56,8 +55,10 @@ public class AppLoader
         // Download the missing files
         download(missingFiles, modelConfig, arguments.getModelPath());
 
+        ParameterReader reader = new ParameterReader(arguments.getModelPath());
+
         // Read the config (first look into the model folder, second to the config folder (maybe it's different)
-        Config config = Config.read(arguments, modelConfig, objectMapper);
+        Config config = Config.readConfig(arguments, modelConfig, reader);
 
         if (arguments.isCalculationOnly())
         {
@@ -92,16 +93,6 @@ public class AppLoader
                 OUT.println("Error launching the main app: " + e.getMessage());
             }
         }
-    }
-
-    public static void logo()
-    {
-        OUT.println(" ____                          _     _     __  __");
-        OUT.println("|  _ \\  ___ _ __ ___   ___    | |   | |   |  \\/  |   _______   ___");
-        OUT.println("| | | |/ _ \\ '_ ` _ \\ / _ \\   | |   | |   | |\\/| |  |_  / _ \\ / _ \\");
-        OUT.println("| |_| |  __/ | | | | | (_) |  | |___| |___| |  | |   / / (_) | (_) |");
-        OUT.println("|____/ \\___|_| |_| |_|\\___/   |_____|_____|_|  |_|  /___\\___/ \\___/");
-        OUT.println("Util: " + UTIL.getUtilName() + "\n");
     }
 
     private void selectModel(Arguments arguments) throws Exception

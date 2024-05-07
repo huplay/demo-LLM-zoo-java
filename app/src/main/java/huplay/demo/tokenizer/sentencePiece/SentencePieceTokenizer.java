@@ -197,15 +197,21 @@ public class SentencePieceTokenizer implements Tokenizer
             // Find the best merge of token[i] and token[i + 1]
             for (int i = 0; i < tokens.size() - 1; i++)
             {
-                String mergedText = vocabulary[tokens.get(i)] + vocabulary[tokens.get(i + 1)];
-                int id = getId(mergedText);
+                int id1 = tokens.get(i);
+                int id2 = tokens.get(i);
 
-                if (id != -1 && vocabularyScores[id] > bestScore)
+                if (id1 >= 0 && id2 >= 0 && id1 < vocabulary.length && id2 < vocabulary.length)
                 {
-                    // If this text exists in the vocabulary, and has better score as the best, record it
-                    bestScore = vocabularyScores[id];
-                    bestId = id;
-                    bestIndex = i;
+                    String mergedText = vocabulary[id1] + vocabulary[id2];
+                    int id = getId(mergedText);
+
+                    if (id != -1 && vocabularyScores[id] > bestScore)
+                    {
+                        // If this text exists in the vocabulary, and has better score as the best, record it
+                        bestScore = vocabularyScores[id];
+                        bestId = id;
+                        bestIndex = i;
+                    }
                 }
             }
 
@@ -307,16 +313,22 @@ public class SentencePieceTokenizer implements Tokenizer
             // Find the best merge of token[i] and token[i + 1]
             for (int i = 0; i < tokens.size() - 1; i++)
             {
-                String mergedText = vocabulary[tokens.get(i).getId()] + vocabulary[tokens.get(i + 1).getId()];
-                int id = getId(mergedText);
+                int id1 = tokens.get(i).getId();
+                int id2 = tokens.get(i + 1).getId();
 
-                if (id != -1 && vocabularyScores[id] > bestScore)
+                if (id1 >= 0 && id2 >= 0 && id1 < vocabulary.length - 1 && id2 < vocabulary.length - 1)
                 {
-                    // If this text exists in the vocabulary, and has better score as the best, record it
-                    bestScore = vocabularyScores[id];
-                    bestId = id;
-                    bestText = mergedText;
-                    bestIndex = i;
+                    String mergedText = vocabulary[id1] + vocabulary[id2];
+                    int id = getId(mergedText);
+
+                    if (id != -1 && vocabularyScores[id] > bestScore)
+                    {
+                        // If this text exists in the vocabulary, and has better score as the best, record it
+                        bestScore = vocabularyScores[id];
+                        bestId = id;
+                        bestText = mergedText;
+                        bestIndex = i;
+                    }
                 }
             }
 

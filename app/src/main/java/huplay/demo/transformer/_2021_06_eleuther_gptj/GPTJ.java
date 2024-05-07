@@ -1,11 +1,10 @@
-package huplay.demo.transformer._2021_06_eleutherai_gptj;
+package huplay.demo.transformer._2021_06_eleuther_gptj;
 
 import huplay.demo.config.Config;
 import huplay.demo.transformer.BaseDecoder;
 import huplay.demo.transformer.BaseTransformer;
 import huplay.demo.transformer.DecoderType;
 
-import static huplay.demo.AppLoader.UTIL;
 import static huplay.demo.TransformerUtil.layerNorm;
 import static huplay.demo.config.ParameterType.*;
 
@@ -27,8 +26,7 @@ import static huplay.demo.config.ParameterType.*;
     - Rotary Position Embedding (RoPE)
     - Uses bias at token embeddings
     - No bias at attention query/key/value matrices and projection (but has bias at the mlp component)
-    - TODO: It seems the mlp normalization weights and biases are common, at least there's no such files for every decoder.
-
+    - Feed-forward normalization parameters are common in all decoders, and the same used at final normalization
  * @author Hunor Szegi
  */
 public class GPTJ extends BaseTransformer
@@ -39,7 +37,7 @@ public class GPTJ extends BaseTransformer
 
         // Load parameters
         loadMatrix(TOKEN_EMBEDDINGS, "lm_head.weight", tokenCount, hiddenSize);
-        loadVector(TOKEN_EMBEDDING_BIAS, "lm_head.bias", tokenCount); // TODO: This is new
+        loadVectorOptional(TOKEN_EMBEDDING_BIAS, "lm_head.bias", tokenCount); // TODO: This is new
 
         loadVector(OUTPUT_NORM_WEIGHT, "transformer.ln_f.weight", hiddenSize);
         loadVector(OUTPUT_NORM_BIAS, "transformer.ln_f.bias", hiddenSize);
@@ -49,7 +47,7 @@ public class GPTJ extends BaseTransformer
     {
         // Find the embeddings of the token
         float[] hiddenState = matrix(TOKEN_EMBEDDINGS)[token];
-        hiddenState = UTIL.addVectors(hiddenState, vector(TOKEN_EMBEDDING_BIAS));
+        //hiddenState = UTIL.addVectors(hiddenState, vector(TOKEN_EMBEDDING_BIAS));
 
         // Decoder stack
         for (BaseDecoder decoder : decoders)

@@ -29,7 +29,7 @@ public class Llama extends BaseTransformer
         super(config, DecoderType.META_LLAMA);
 
         // Load parameters
-        loadMatrix(TOKEN_EMBEDDINGS, "embed_tokens.weight", embeddingCount, hiddenSize);
+        loadMatrix(TOKEN_EMBEDDINGS, "embed_tokens.weight", embeddingCount + 3, hiddenSize);
         loadVector(OUTPUT_NORM_WEIGHT, "norm.weight", hiddenSize);
     }
 

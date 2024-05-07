@@ -4,7 +4,7 @@ import huplay.demo.IdentifiedException;
 import huplay.demo.config.Config;
 import huplay.demo.transformer._2018_01_google_transformer.TransformerDecoder;
 import huplay.demo.transformer._2021_03_eleuther_gptneo.GPTNeoDecoder;
-import huplay.demo.transformer._2021_06_eleutherai_gptj.GPTJDecoder;
+import huplay.demo.transformer._2021_06_eleuther_gptj.GPTJDecoder;
 import huplay.demo.transformer._2022_05_big_science_bloom.BloomDecoder;
 import huplay.demo.transformer._2023_02_meta_llama.LlamaDecoder;
 import huplay.demo.transformer._2018_06_openai_gpt1.GPT1Decoder;

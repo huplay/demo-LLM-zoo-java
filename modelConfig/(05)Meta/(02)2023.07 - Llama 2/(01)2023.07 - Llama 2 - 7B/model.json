@@ -4,7 +4,7 @@
   "tokenizerType": "SENTENCE_PIECE",
   "repo": "https://huggingface.co/meta-llama/Llama-2-7b-chat-hf",
   "files": ["config.json", "tokenizer.model", "model-00001-of-00002.safetensors", "model-00002-of-00002.safetensors"],
-  "transformerParameterNameFormat": "model.{name}",
-  "decoderParameterNameFormat": "model.layers.{decoderId}.{name}",
+  "parameterNaming": "model.{name}",
+  "decoderParameterNaming": "model.layers.{decoderId}.{name}",
   "memorySize": 11264
 }

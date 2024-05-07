@@ -1,4 +1,4 @@
-package huplay.demo.transformer._2021_06_eleutherai_gptj;
+package huplay.demo.transformer._2021_06_eleuther_gptj;
 
 import huplay.demo.TransformerUtil;
 import huplay.demo.config.Config;
@@ -24,18 +24,18 @@ public class GPTJDecoder extends BaseDecoder
         // Load parameters
         // attn.bias BOOL: 1x1x2048x2048
 
-        loadVector(ATT_NORM_WEIGHT, "transformer.h.{decoderId}.ln_1.weight", hiddenSize);
-        loadVector(ATT_NORM_BIAS, "transformer.h.{decoderId}.ln_1.bias", hiddenSize);
-        loadMatrix(ATT_QUERY_WEIGHT, "transformer.h.{decoderId}.attn.q_proj.weight", hiddenSize, hiddenSize);
-        loadMatrix(ATT_KEY_WEIGHT, "transformer.h.{decoderId}.attn.k_proj.weight", hiddenSize, hiddenSize);
-        loadMatrix(ATT_VALUE_WEIGHT, "transformer.h.{decoderId}.attn.v_proj.weight", hiddenSize, hiddenSize);
-        loadMatrix(ATT_PROJ_WEIGHT, "transformer.h.{decoderId}.attn.out_proj.weight", hiddenSize, hiddenSize);
-        loadVector(MLP_NORM_WEIGHT, "transformer.ln_f.weight", hiddenSize);
-        loadVector(MLP_NORM_BIAS, "transformer.ln_f.bias", hiddenSize);
-        loadMatrix(MLP_1_WEIGHT, "transformer.h.{decoderId}.mlp.fc_in.weight", feedForwardSize, hiddenSize);
-        loadVector(MLP_1_BIAS, "transformer.h.{decoderId}.mlp.fc_in.bias", feedForwardSize);
-        loadMatrix(MLP_2_WEIGHT, "transformer.h.{decoderId}.mlp.fc_out.weight", hiddenSize, feedForwardSize);
-        loadVector(MLP_2_BIAS, "transformer.h.{decoderId}.mlp.fc_out.bias", hiddenSize);
+        loadVector(ATT_NORM_WEIGHT, "ln_1.weight", hiddenSize);
+        loadVector(ATT_NORM_BIAS, "ln_1.bias", hiddenSize);
+        loadMatrix(ATT_QUERY_WEIGHT, "attn.q_proj.weight", hiddenSize, hiddenSize);
+        loadMatrix(ATT_KEY_WEIGHT, "attn.k_proj.weight", hiddenSize, hiddenSize);
+        loadMatrix(ATT_VALUE_WEIGHT, "attn.v_proj.weight", hiddenSize, hiddenSize);
+        loadMatrix(ATT_PROJ_WEIGHT, "attn.out_proj.weight", hiddenSize, hiddenSize);
+        loadVector(MLP_NORM_WEIGHT, "ln_f.weight", hiddenSize);
+        loadVector(MLP_NORM_BIAS, "ln_f.bias", hiddenSize);
+        loadMatrix(MLP_1_WEIGHT, "mlp.fc_in.weight", feedForwardSize, hiddenSize);
+        loadVector(MLP_1_BIAS, "mlp.fc_in.bias", feedForwardSize);
+        loadMatrix(MLP_2_WEIGHT, "mlp.fc_out.weight", hiddenSize, feedForwardSize);
+        loadVector(MLP_2_BIAS, "mlp.fc_out.bias", hiddenSize);
 
         maxAttentionSize = 256; // TODO: Move sparse attention to logic, not as config
     }

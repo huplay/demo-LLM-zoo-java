@@ -4,6 +4,6 @@
   "tokenizerType": "OPENAI_GPT_2",
   "repo": "https://huggingface.co/bigscience/bloom-1b7",
   "files": ["config.json", "tokenizer.json", "model.safetensors"],
-  "decoderParameterNameFormat": "h.{decoderId}.{name}",
+  "decoderParameterNaming": "h.{decoderId}.{name}",
   "memorySize": 9216
 }
