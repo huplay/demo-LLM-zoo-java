@@ -1,8 +1,10 @@
 package huplay.demo.transformer;
 
 import huplay.demo.config.Config;
+import huplay.demo.util.Vector;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public abstract class BaseDecoder extends ParameterStore
 {
@@ -15,8 +17,8 @@ public abstract class BaseDecoder extends ParameterStore
     protected final boolean lastDecoder;
     protected final float epsilon;
 
-    protected final List<float[][]> storedKeys = new ArrayList<>();
-    protected final List<float[][]> storedValues = new ArrayList<>();
+    protected final List<Vector[]> storedKeys = new ArrayList<>();
+    protected final List<Vector[]> storedValues = new ArrayList<>();
 
     public BaseDecoder(Config config, int decoderId)
     {
@@ -33,7 +35,7 @@ public abstract class BaseDecoder extends ParameterStore
     /**
      * Process the input
      */
-    public abstract float[] execute(float[] hiddenState, boolean isOutputProcessing);
+    public abstract Vector execute(Vector hiddenState, boolean isOutputProcessing);
 
     /**
      * Clear stored values to start a new session

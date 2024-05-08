@@ -1,6 +1,7 @@
 package huplay.demo;
 
 import huplay.demo.util.IndexedValue;
+import huplay.demo.util.Vector;
 
 import java.util.List;
 
@@ -31,15 +32,15 @@ public class TransformerUtil
     /**
      * Standard normalization with applying normalization weights and biases
      */
-    public static float[] layerNorm(float[] vector, float[] weight, float[] bias, float epsilon)
+    public static Vector layerNorm(Vector vector, Vector weight, Vector bias, float epsilon)
     {
         // Standard normalization
-        float[] result = UTIL.normalize(vector, epsilon);
+        Vector result = UTIL.normalize(vector, epsilon);
 
         // Applying the trained weights and biases
-        for (int i = 0; i < vector.length; i++)
+        for (int i = 0; i < vector.size(); i++)
         {
-            result[i] = result[i] * weight[i] + bias[i];
+            result.set(i, result.get(i) * weight.get(i) + bias.get(i));
         }
 
         return result;
@@ -49,14 +50,15 @@ public class TransformerUtil
      * Root Mean Square Layer Normalization (RMS)
      * Original paper: <a href="https://arxiv.org/abs/1910.07467" />
      */
-    public static float[] RMSLayerNorm(float[] vector, float[] weight, float epsilon)
+    public static Vector RMSLayerNorm(Vector vector, Vector weight, float epsilon)
     {
-        int size = vector.length;
+        int size = vector.size();
 
         // Calculate the sum of squares
         float sum = 0f;
-        for (float value : vector)
+        for (int i = 0; i < vector.size(); i++)
         {
+            float value = vector.get(i);
             sum += value * value;
         }
 
@@ -64,11 +66,11 @@ public class TransformerUtil
         sum = 1f / sqrt(sum / size + epsilon);
 
         //  Normalize and scale
-        float[] result = new float[size];
+        Vector result = new Vector(vector.getFloatType(), size);
 
         for (int i = 0; i < size; i++)
         {
-            result[i] = weight[i] * (sum * vector[i]);
+            result.set(i, weight.get(i) * (sum * vector.get(i)));
         }
 
         return result;
@@ -77,25 +79,26 @@ public class TransformerUtil
     /**
      * Calculate softmax - rescale the values into a range between 0 and 1
      */
-    public static float[] softmax(float[] vector)
+    public static Vector softmax(Vector vector)
     {
         float max = UTIL.max(vector);
 
         double total = 0;
-        for (float value : vector)
+        for (int i = 0; i < vector.size(); i++)
         {
+            float value = vector.get(i);
             double exp = exp(value - max);
 
             total = total + exp;
         }
 
-        float[] ret = new float[vector.length];
+        Vector ret = new Vector(vector.getFloatType(), vector.size());
 
-        for (int i = 0; i < vector.length; i++)
+        for (int i = 0; i < vector.size(); i++)
         {
-            double exp = exp(vector[i] - max);
+            double exp = exp(vector.get(i) - max);
 
-            ret[i] = (float) (exp / total);
+            ret.set(i, (float) (exp / total));
         }
 
         return ret;

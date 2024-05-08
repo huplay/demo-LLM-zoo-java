@@ -4,6 +4,7 @@ import huplay.demo.transformer.DecoderType;
 import huplay.demo.config.Config;
 import huplay.demo.transformer.BaseTransformer;
 import huplay.demo.transformer.BaseDecoder;
+import huplay.demo.util.Vector;
 
 import static huplay.demo.TransformerUtil.RMSLayerNorm;
 import static huplay.demo.config.ParameterType.*;
@@ -33,10 +34,10 @@ public class Llama extends BaseTransformer
         loadVector(OUTPUT_NORM_WEIGHT, "norm.weight", hiddenSize);
     }
 
-    public float[] execute(int pos, int token, boolean isOutputProcessing)
+    public Vector execute(int pos, int token, boolean isOutputProcessing)
     {
         // Find the embeddings of the token
-        float[] hiddenState = matrix(TOKEN_EMBEDDINGS)[token];
+        Vector hiddenState = matrix(TOKEN_EMBEDDINGS)[token];
 
         // Decoder stack
         for (BaseDecoder decoder : decoders)

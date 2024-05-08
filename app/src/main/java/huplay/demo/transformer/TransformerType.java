@@ -2,7 +2,7 @@ package huplay.demo.transformer;
 
 import huplay.demo.IdentifiedException;
 import huplay.demo.config.Config;
-import huplay.demo.transformer._2018_01_google_transformer.Transformer;
+import huplay.demo.transformer._2018_01_google_transformer.OriginalTransformer;
 import huplay.demo.transformer._2021_03_eleuther_gptneo.GPTNeo;
 import huplay.demo.transformer._2021_06_eleuther_gptj.GPTJ;
 import huplay.demo.transformer._2022_05_big_science_bloom.Bloom;
@@ -32,7 +32,7 @@ public enum TransformerType
         TransformerType transformerType = TransformerType.valueOf(type);
         switch (transformerType)
         {
-            case ORIGINAL_TRANSFORMER: return new Transformer(config);
+            case ORIGINAL_TRANSFORMER: return new OriginalTransformer(config);
             case OPENAI_GPT_1: return new GPT1(config);
             case OPENAI_GPT_2: return new GPT2(config);
             case ELEUTHERAI_GPT_NEO: return new GPTNeo(config);

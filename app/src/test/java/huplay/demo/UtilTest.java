@@ -1,39 +1,39 @@
 package huplay.demo;
 
 import huplay.demo.util.Util;
+import huplay.demo.util.Vector;
 import org.junit.Test;
 
-import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
-public class UtilTest
+public class UtilTest extends BaseTest
 {
     private static final Util UTIL = new Util();
 
     @Test
     public void addVectorsTest()
     {
-        float[] a = {1, 2, 3, 4};
-        float[] b = {4, 5, 6, 7};
+        Vector a = createVector(1, 2, 3, 4);
+        Vector b = createVector(4, 5, 6, 7);
         float[] expectedResult = {5, 7, 9, 11};
 
-        assertArrayEquals(expectedResult, UTIL.addVectors(a, b), 0);
+        assertVectorEquals(expectedResult, UTIL.addVectors(a, b), 0);
     }
 
     @Test
     public void mulVectorByScalarTest()
     {
-        float[] a = {5, 6, 7, 8};
+        Vector a = createVector(5, 6, 7, 8);
         float[] expectedResult = {15, 18, 21, 24};
 
-        assertArrayEquals(expectedResult, UTIL.mulVectorByScalar(a, 3), 0);
+        assertVectorEquals(expectedResult, UTIL.mulVectorByScalar(a, 3), 0);
     }
 
     @Test
     public void dotProductTest()
     {
-        float[] a = {5, 6, 7, 8};
-        float[] b = {4, 5, 6, 7};
+        Vector a = createVector(5, 6, 7, 8);
+        Vector b = createVector(4, 5, 6, 7);
 
         assertEquals(5*4 + 6*5 + 7*6 + 8*7, UTIL.dotProduct(a, b), 0);
     }
@@ -41,55 +41,61 @@ public class UtilTest
     @Test
     public void mulVectorByMatrixTest()
     {
-        float[] a = {2, 5, 1, 8};
-        float[][] b = {
-                {1, 0, 2, 0},
-                {0, 3, 0, 4},
-                {0, 0, 5, 0},
-                {6, 0, 0, 7}};
+        Vector a = createVector(2, 5, 1, 8);
+
+        Vector b1 = createVector(1, 0, 2, 0);
+        Vector b2 = createVector(0, 3, 0, 4);
+        Vector b3 = createVector(0, 0, 5, 0);
+        Vector b4 = createVector(6, 0, 0, 7);
+        Vector[] b = {b1, b2, b3, b4};
 
         float[] expectedResult = {4, 47, 5, 68};
 
-        assertArrayEquals(expectedResult, UTIL.mulVectorByTransposedMatrix(a, b), 0);
+        assertVectorEquals(expectedResult, UTIL.mulVectorByTransposedMatrix(a, b), 0);
     }
 
     @Test
     public void mulVectorByTransposedMatrixTest()
     {
-        float[] a = {5, 6, 7, 8};
-        float[][] b = {
-                {1, 4, 7, 10},
-                {2, 5, 8, 11},
-                {3, 6, 9, 12}};
+        Vector a = createVector(5, 6, 7, 8);
+
+        Vector b1 = createVector(1, 4, 7, 10);
+        Vector b2 = createVector(2, 5, 8, 11);
+        Vector b3 = createVector(3, 6, 9, 12);
+        Vector[] b = {b1, b2, b3};
 
         float[] expectedResult = {5 + 6*4 + 7*7 + 8*10, 5*2 + 6*5 + 7*8 + 8*11, 5*3 + 6*6 + 7*9 + 8*12};
 
-        assertArrayEquals(expectedResult, UTIL.mulVectorByTransposedMatrix(a, b), 0);
+        assertVectorEquals(expectedResult, UTIL.mulVectorByTransposedMatrix(a, b), 0);
     }
 
     @Test
     public void splitVectorTest()
     {
-        float[] matrix = {1, 2, 3, 4, 5, 6};
+        Vector vector = createVector(1, 2, 3, 4, 5, 6);
         float[][] expectedResult = {{1, 2}, {3, 4}, {5, 6}};
 
-        assertArrayEquals(expectedResult, UTIL.splitVector(matrix, 3));
+        assertMatrixEquals(expectedResult, UTIL.splitVector(vector, 3), 0);
     }
 
     @Test
     public void flattenMatrixTest()
     {
-        float[][] matrix = {{1, 2}, {3, 4}, {5, 6}};
+        Vector v1 = createVector(1, 2);
+        Vector v2 = createVector(3, 4);
+        Vector v3 = createVector(5, 6);
+        Vector[] matrix = {v1, v2, v3};
+
         float[] expectedResult = {1, 2, 3, 4, 5, 6};
 
-        assertArrayEquals(expectedResult, UTIL.flattenMatrix(matrix), 0);
+        assertVectorEquals(expectedResult, UTIL.flattenMatrix(matrix), 0);
     }
 
     @Test
     public void averageTest()
     {
-        float[] matrix = {1, 2, 3, 4, 5, 6};
+        Vector vector = createVector(1, 2, 3, 4, 5, 6);
 
-        assertEquals(3.5f, UTIL.average(matrix), 0);
+        assertEquals(3.5f, UTIL.average(vector), 0);
     }
 }

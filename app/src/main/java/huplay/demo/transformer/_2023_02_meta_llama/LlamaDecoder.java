@@ -3,10 +3,12 @@ package huplay.demo.transformer._2023_02_meta_llama;
 import huplay.demo.TransformerUtil;
 import huplay.demo.config.Config;
 import huplay.demo.transformer.BaseDecoder;
+import huplay.demo.util.Vector;
 
 import static huplay.demo.AppLoader.UTIL;
 import static huplay.demo.TransformerUtil.*;
 import static huplay.demo.config.ParameterType.*;
+import static huplay.demo.util.Vector.newVectorArray;
 
 /**
  * Meta Llama decoder implementation
@@ -44,7 +46,7 @@ public class LlamaDecoder extends BaseDecoder
         this.attentionDividend = sqrt(headSize);
     }
 
-    public float[] execute(float[] hiddenState, boolean isOutputProcessing)
+    public Vector execute(Vector hiddenState, boolean isOutputProcessing)
     {
         // Attention block
         hiddenState = attentionBlock(hiddenState);
@@ -58,10 +60,10 @@ public class LlamaDecoder extends BaseDecoder
         return hiddenState;
     }
 
-    private float[] attentionBlock(float[] inputHiddenState)
+    private Vector attentionBlock(Vector inputHiddenState)
     {
         // Normalisation
-        float[] hiddenState = RMSLayerNorm(inputHiddenState, vector(ATT_NORM_WEIGHT), epsilon);
+        Vector hiddenState = RMSLayerNorm(inputHiddenState, vector(ATT_NORM_WEIGHT), epsilon);
 
         if (kvHeadSize == 1)
         {
@@ -80,10 +82,10 @@ public class LlamaDecoder extends BaseDecoder
         return hiddenState;
     }
 
-    private float[] feedForwardBlock(float[] inputHiddenState)
+    private Vector feedForwardBlock(Vector inputHiddenState)
     {
         // Normalisation
-        float[] hiddenState = RMSLayerNorm(inputHiddenState, vector(MLP_NORM_WEIGHT), epsilon);
+        Vector hiddenState = RMSLayerNorm(inputHiddenState, vector(MLP_NORM_WEIGHT), epsilon);
 
         // Neural layers
         hiddenState = neuralLayers(hiddenState);
@@ -94,17 +96,17 @@ public class LlamaDecoder extends BaseDecoder
         return hiddenState;
     }
 
-    protected float[] attention(float[] hiddenState)
+    protected Vector attention(Vector hiddenState)
     {
         // Calculate the query, key and value vectors for the actual token
-        float[] query = UTIL.mulVectorByTransposedMatrix(hiddenState, matrix(ATT_QUERY_WEIGHT));
-        float[] key = UTIL.mulVectorByTransposedMatrix(hiddenState, matrix(ATT_KEY_WEIGHT));
-        float[] value = UTIL.mulVectorByTransposedMatrix(hiddenState, matrix(ATT_VALUE_WEIGHT));
+        Vector query = UTIL.mulVectorByTransposedMatrix(hiddenState, matrix(ATT_QUERY_WEIGHT));
+        Vector key = UTIL.mulVectorByTransposedMatrix(hiddenState, matrix(ATT_KEY_WEIGHT));
+        Vector value = UTIL.mulVectorByTransposedMatrix(hiddenState, matrix(ATT_VALUE_WEIGHT));
 
         // Split the query, key and value vectors into pieces for all heads
-        float[][] queryByHead = UTIL.splitVector(query, headCount);
-        float[][] keyByHead = UTIL.splitVector(key, headCount);
-        float[][] valueByHead = UTIL.splitVector(value, headCount);
+        Vector[] queryByHead = UTIL.splitVector(query, headCount);
+        Vector[] keyByHead = UTIL.splitVector(key, headCount);
+        Vector[] valueByHead = UTIL.splitVector(value, headCount);
 
         // Position embedding (RoPE)
         applyPosition(query, key);
@@ -115,23 +117,23 @@ public class LlamaDecoder extends BaseDecoder
         int storedSize = storedKeys.size();
 
         // Declaration of the variable for collecting the attention results for all heads
-        float[][] valueAggregate = new float[headCount][headSize];
+        Vector[] valueAggregate = newVectorArray(hiddenState.getFloatType(), headCount, headSize);
 
         // Scoring the previous tokens (including the actual), separately for all heads
         for (int head = 0; head < headCount; head++)
         {
             // Calculate the scores
-            float[] actualQuery = queryByHead[head];
-            float[] scores = new float[storedSize];
+            Vector actualQuery = queryByHead[head];
+            Vector scores = new Vector(actualQuery.getFloatType(), storedSize);
 
             for (int pos = 0; pos < storedSize; pos++)
             {
                 // The score is calculated multiplying the "actual" query vector and the "related" key vector
-                float[] relatedKey = storedKeys.get(pos)[head];
+                Vector relatedKey = storedKeys.get(pos)[head];
                 float score = UTIL.dotProduct(actualQuery, relatedKey);
 
                 // Divide the score by the attention dividend
-                scores[pos] = score / attentionDividend;
+                scores.set(pos, score / attentionDividend);
             }
 
             // Rescaling the scores to values between 0 and 1
@@ -140,8 +142,8 @@ public class LlamaDecoder extends BaseDecoder
             // Multiply the value matrices with the scores, and sum up
             for (int pos = 0; pos < storedSize; pos++)
             {
-                float[] relatedValue = storedValues.get(pos)[head];
-                float[] multipliedValue = UTIL.mulVectorByScalar(relatedValue, scores[pos]);
+                Vector relatedValue = storedValues.get(pos)[head];
+                Vector multipliedValue = UTIL.mulVectorByScalar(relatedValue, scores.get(pos));
                 valueAggregate[head] = UTIL.addVectors(valueAggregate[head], multipliedValue);
             }
         }
@@ -155,7 +157,7 @@ public class LlamaDecoder extends BaseDecoder
         return hiddenState;
     }
 
-    protected void applyPosition(float[] query, float[] key)
+    protected void applyPosition(Vector query, Vector key)
     {
         for (int i = 0; i < hiddenSize; i += 2)
         {
@@ -167,30 +169,30 @@ public class LlamaDecoder extends BaseDecoder
             float y = sin(degree);
 
             // Rotate query
-            float query0 = query[i];
-            query[i] = query0 * x - query[i + 1] * y;
-            query[i + 1] = query0 * y - query[i + 1] * x;
+            float query0 = query.get(i);
+            query.set(i, query0 * x - query.get(i + 1) * y);
+            query.set(i + 1, query0 * y - query.get(i + 1) * x);
 
             // Rotate key
-            float key0 = key[i];
-            key[i] = key0 * x - key[i + 1] * y;
-            key[i + 1] = key0 * y - key[i + 1] * x;
+            float key0 = key.get(i);
+            key.set(i, key0 * x - key.get(i + 1) * y);
+            key.set(i + 1, key0 * y - key.get(i + 1) * x);
         }
     }
 
-    protected float[] groupedQueryAttention(float[] hiddenState)
+    protected Vector groupedQueryAttention(Vector hiddenState)
     {
         // Calculate the query, key and value vectors for the actual token
-        float[] query = UTIL.mulVectorByTransposedMatrix(hiddenState, matrix(ATT_QUERY_WEIGHT));
+        Vector query = UTIL.mulVectorByTransposedMatrix(hiddenState, matrix(ATT_QUERY_WEIGHT));
 
         // The key and value matrices are smaller (less head count) than the query matrix
-        float[] key = UTIL.mulVectorByMatrix(hiddenState, matrix(ATT_KEY_WEIGHT));
-        float[] value = UTIL.mulVectorByMatrix(hiddenState, matrix(ATT_VALUE_WEIGHT));
+        Vector key = UTIL.mulVectorByMatrix(hiddenState, matrix(ATT_KEY_WEIGHT));
+        Vector value = UTIL.mulVectorByMatrix(hiddenState, matrix(ATT_VALUE_WEIGHT));
 
         // Split the query, key and value vectors into pieces for all heads
-        float[][] queryByHead = UTIL.splitVector(query, headCount);
-        float[][] keyByGroup = UTIL.splitVector(key, headCount / kvHeadSize);
-        float[][] valueByGroup = UTIL.splitVector(value, headCount / kvHeadSize);
+        Vector[] queryByHead = UTIL.splitVector(query, headCount);
+        Vector[] keyByGroup = UTIL.splitVector(key, headCount / kvHeadSize);
+        Vector[] valueByGroup = UTIL.splitVector(value, headCount / kvHeadSize);
 
         // Position embedding (RoPE)
         applyGroupedPosition(query, key);
@@ -201,7 +203,7 @@ public class LlamaDecoder extends BaseDecoder
         int storedSize = storedKeys.size();
 
         // Declaration of the variable for collecting the attention results for all heads
-        float[][] valueAggregate = new float[headCount][headSize];
+        Vector[] valueAggregate = new Vector[headCount];
 
         // Scoring the previous tokens (including the actual), separately for all heads
         for (int head = 0; head < headCount; head++)
@@ -209,17 +211,17 @@ public class LlamaDecoder extends BaseDecoder
             int group = head % kvHeadCount;
 
             // Calculate the scores
-            float[] actualQuery = queryByHead[head];
-            float[] scores = new float[storedSize];
+            Vector actualQuery = queryByHead[head];
+            Vector scores = new Vector(actualQuery.getFloatType(), storedSize);
 
             for (int pos = 0; pos < storedSize; pos++)
             {
                 // The score is calculated multiplying the "actual" query vector and the "related" key vector
-                float[] relatedKey = storedKeys.get(pos)[group];
+                Vector relatedKey = storedKeys.get(pos)[group];
                 float score = UTIL.dotProduct(actualQuery, relatedKey);
 
                 // Divide the score by the attention dividend
-                scores[pos] = score / attentionDividend;
+                scores.set(pos, score / attentionDividend);
             }
 
             // Rescaling the scores to values between 0 and 1
@@ -228,8 +230,8 @@ public class LlamaDecoder extends BaseDecoder
             // Multiply the value matrices with the scores, and sum up
             for (int pos = 0; pos < storedSize; pos++)
             {
-                float[] relatedValue = storedValues.get(pos)[group];
-                float[] multipliedValue = UTIL.mulVectorByScalar(relatedValue, scores[pos]);
+                Vector relatedValue = storedValues.get(pos)[group];
+                Vector multipliedValue = UTIL.mulVectorByScalar(relatedValue, scores.get(pos));
                 valueAggregate[head] = UTIL.addVectors(valueAggregate[head], multipliedValue);
             }
         }
@@ -243,7 +245,7 @@ public class LlamaDecoder extends BaseDecoder
         return hiddenState;
     }
 
-    protected void applyGroupedPosition(float[] query, float[] key)
+    protected void applyGroupedPosition(Vector query, Vector key)
     {
         for (int i = 0; i < hiddenSize; i += 2)
         {
@@ -255,36 +257,36 @@ public class LlamaDecoder extends BaseDecoder
             float y = sin(degree);
 
             // Rotate query
-            float query0 = query[i];
-            query[i] = query0 * x - query[i + 1] * y;
-            query[i + 1] = query0 * y - query[i + 1] * x;
+            float query0 = query.get(i);
+            query.set(i, query0 * x - query.get(i + 1) * y);
+            query.set(i + 1, query0 * y - query.get(i + 1) * x);
 
             if (i < hiddenSize / kvHeadSize)
             {
                 // Rotate key
-                float key0 = key[i];
-                key[i] = key0 * x - key[i + 1] * y;
-                key[i + 1] = key0 * y - key[i + 1] * x;
+                float key0 = key.get(i);
+                key.set(i, key0 * x - key.get(i + 1) * y);
+                key.set(i + 1, key0 * y - key.get(i + 1) * x);
             }
         }
     }
 
-    private float[] neuralLayers(float[] hiddenState)
+    private Vector neuralLayers(Vector hiddenState)
     {
         // Feed parallel two layers with the same input
-        float[] hiddenState1 = UTIL.mulVectorByTransposedMatrix(hiddenState, matrix(MLP_1_WEIGHT));
-        float[] hiddenState2 = UTIL.mulVectorByTransposedMatrix(hiddenState, matrix(MLP_2_WEIGHT));
+        Vector hiddenState1 = UTIL.mulVectorByTransposedMatrix(hiddenState, matrix(MLP_1_WEIGHT));
+        Vector hiddenState2 = UTIL.mulVectorByTransposedMatrix(hiddenState, matrix(MLP_2_WEIGHT));
 
         // Use SwiGLU activation function on the gate layer (no activation function on the other)
         for (int neuron = 0; neuron < feedForwardSize; neuron++)
         {
-            hiddenState1[neuron] = TransformerUtil.swiglu(hiddenState1[neuron]);
+            hiddenState1.set(neuron, TransformerUtil.swiglu(hiddenState1.get(neuron)));
         }
 
         // Multiply the two outputs
         for (int neuron = 0; neuron < feedForwardSize; neuron++)
         {
-            hiddenState1[neuron] = hiddenState1[neuron] * hiddenState2[neuron];
+            hiddenState1.set(neuron, hiddenState1.get(neuron) * hiddenState2.get(neuron));
         }
 
         // Use the third layer (no activation function)

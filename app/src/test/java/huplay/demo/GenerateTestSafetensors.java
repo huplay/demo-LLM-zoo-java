@@ -4,12 +4,17 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import huplay.demo.config.ParameterReader;
 import huplay.demo.config.SafetensorsModel;
+import huplay.demo.util.Vector;
 
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static huplay.demo.config.SafetensorsModel.TensorModel;
@@ -150,20 +155,22 @@ public class GenerateTestSafetensors
                 if (shape.length == 1)
                 {
                     // Write a vector
-                    float[] values = reader.readVector(entry.getKey(), shape[0]);
-                    for (float value : values)
+                    Vector values = reader.readVector(entry.getKey(), shape[0]);
+                    for (int i = 0; i < values.size(); i++)
                     {
+                        float value = values.get(i);
                         out.writeFloat(toLittleEndian(value));
                     }
                 }
                 else if (shape.length == 2)
                 {
                     // Write a matrix
-                    float[][] values = reader.readMatrix(entry.getKey(), shape[0], shape[1]);
-                    for (float[] row : values)
+                    Vector[] values = reader.readMatrix(entry.getKey(), shape[0], shape[1]);
+                    for (Vector row : values)
                     {
-                        for (float value : row)
+                        for (int i = 0; i < row.size(); i++)
                         {
+                            float value = row.get(i);
                             out.writeFloat(toLittleEndian(value));
                         }
                     }

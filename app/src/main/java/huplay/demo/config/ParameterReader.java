@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import huplay.demo.IdentifiedException;
+import huplay.demo.util.FloatType;
+import huplay.demo.util.Vector;
 
 import java.io.*;
 import java.nio.*;
@@ -123,25 +125,25 @@ public class ParameterReader
         return new String(array, StandardCharsets.UTF_8);
     }
 
-    public float[] readVector(String file, int size)
+    public Vector readVector(String file, int size)
     {
         return read(file, size, false);
     }
 
-    public float[] readVectorOptional(String file, int size)
+    public Vector readVectorOptional(String file, int size)
     {
         return read(file, size, true);
     }
 
-    public float[][] readMatrix(String file, int rows, int cols)
+    public Vector[] readMatrix(String file, int rows, int cols)
     {
-        float[] vector = read(file, rows * cols, false);
+        Vector vector = read(file, rows * cols, false);
         return vector == null ? null : UTIL.splitVector(vector, rows);
     }
 
-    public float[][] readMatrixOptional(String file, int rows, int cols)
+    public Vector[] readMatrixOptional(String file, int rows, int cols)
     {
-        float[] vector = read(file, rows * cols, true);
+        Vector vector = read(file, rows * cols, true);
         return vector == null ? null : UTIL.splitVector(vector, rows);
     }
 
@@ -155,7 +157,7 @@ public class ParameterReader
         }
     }
 
-    private float[] read(String id, int size, boolean isOptional)
+    private Vector read(String id, int size, boolean isOptional)
     {
         ParameterDescriptor descriptor = parameterDescriptors.get(id);
 
@@ -193,7 +195,7 @@ public class ParameterReader
         }
     }
 
-    private float[] readFloat32(FileInputStream stream, int size, long offset) throws IOException
+    private Vector readFloat32(FileInputStream stream, int size, long offset) throws IOException
     {
         float[] array = new float[size];
 
@@ -201,10 +203,28 @@ public class ParameterReader
         buffer.order(ByteOrder.LITTLE_ENDIAN);
         buffer.asFloatBuffer().get(array, 0, size);
 
-        return array;
+        return new Vector(FloatType.FLOAT32, array);
     }
 
-    private float[] readFloat16(FileInputStream stream, int size, long offset) throws IOException
+    private Vector readFloat16(FileInputStream stream, int size, long offset) throws IOException
+    {
+        short[] array = new short[size];
+
+        ByteBuffer buffer = stream.getChannel().map(FileChannel.MapMode.READ_ONLY, offset, (long) size * 2);
+        buffer.order(ByteOrder.LITTLE_ENDIAN);
+        buffer.asShortBuffer().get(array, 0, size);
+
+        float[] ret = new float[size]; // TODO
+
+        for (int i = 0; i < size; i++)
+        {
+            ret[i] = toFloat32(array[i]);
+        }
+
+        return new Vector(FloatType.FLOAT16, array);
+    }
+
+    private Vector readBrainFloat16(FileInputStream stream, int size, long offset) throws IOException
     {
         short[] array = new short[size];
 
@@ -219,25 +239,7 @@ public class ParameterReader
             ret[i] = toFloat32(array[i]);
         }
 
-        return ret;
-    }
-
-    private float[] readBrainFloat16(FileInputStream stream, int size, long offset) throws IOException
-    {
-        short[] array = new short[size];
-
-        ByteBuffer buffer = stream.getChannel().map(FileChannel.MapMode.READ_ONLY, offset, (long) size * 2);
-        buffer.order(ByteOrder.LITTLE_ENDIAN);
-        buffer.asShortBuffer().get(array, 0, size);
-
-        float[] ret = new float[size];
-
-        for (int i = 0; i < size; i++)
-        {
-            ret[i] = toFloat32(array[i]);
-        }
-
-        return ret;
+        return new Vector(FloatType.BFLOAT16, array);
     }
 
     private float toFloat32(short value)

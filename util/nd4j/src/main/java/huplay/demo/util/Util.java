@@ -12,76 +12,109 @@ public class Util extends AbstractUtil
     }
 
     @Override
-    public float[] addVectors(float[] vector1, float[] vector2)
+    public Vector addVectors(Vector vector1, Vector vector2)
     {
-        try (INDArray array1 = Nd4j.create(vector1);
-             INDArray array2 = Nd4j.create(vector2))
+        try (INDArray array1 = Nd4j.create(vector1.getFloat32Values());
+             INDArray array2 = Nd4j.create(vector2.getFloat32Values()))
         {
-            return array1.add(array2).toFloatVector();
+            return new Vector(vector1.getFloatType(), array1.add(array2).toFloatVector());
         }
     }
 
     @Override
-    public float dotProduct(float[] vector1, float[] vector2)
+    public float dotProduct(Vector vector1, Vector vector2)
     {
-        try (INDArray array1 = Nd4j.create(vector1);
-             INDArray array2 = Nd4j.create(vector2))
+        try (INDArray array1 = Nd4j.create(vector1.getFloat32Values());
+             INDArray array2 = Nd4j.create(vector2.getFloat32Values()))
         {
             return array1.mmul(array2).getFloat(0);
         }
     }
 
     @Override
-    public float[] mulVectorByScalar(float[] vector, float scalar)
+    public Vector mulVectorByScalar(Vector vector, float scalar)
     {
-        try (INDArray array = Nd4j.create(vector))
+        try (INDArray array = Nd4j.create(vector.getFloat32Values()))
         {
-            return array.mul(scalar).toFloatVector();
+            return new Vector(vector.getFloatType(), array.mul(scalar).toFloatVector());
         }
     }
 
-    public float[] mulVectorByMatrix(float[] vector, float[][] matrix)
+    // TODO: It seems not too effective. We convert the vector to matrix and do a matrix-matrix multiplication
+    public Vector mulVectorByMatrix(Vector vector, Vector[] matrix)
     {
-        return Nd4j.create(new float[][] {vector}).mmul(Nd4j.create(matrix)).toFloatVector();
+        float[][] floatVector = new float[][] {vector.getFloat32Values()};
+
+        float[][] floatMatrix = new float[matrix.length][];
+        for (int i = 0; i < matrix.length; i++)
+        {
+            floatMatrix[i] = matrix[i].getFloat32Values();
+        }
+
+        try (INDArray array1 = Nd4j.create(floatVector);
+             INDArray array2 = Nd4j.create(floatMatrix))
+        {
+            return new Vector(vector.getFloatType(), array1.mmul(array2).toFloatVector());
+        }
     }
 
     @Override
-    public float[] mulVectorByTransposedMatrix(float[] vector, float[][] matrix)
+    public Vector mulVectorByTransposedMatrix(Vector vector, Vector[] matrix)
     {
-        float[][] array = new float[1][vector.length];
-        array[0] = vector;
+        float[][] array = new float[1][vector.size()];
+        array[0] = vector.getFloat32Values();
+
+        float[][] floatMatrix = new float[matrix.length][];
+        for (int i = 0; i < matrix.length; i++)
+        {
+            floatMatrix[i] = matrix[i].getFloat32Values();
+        }
 
         try (INDArray array1 = Nd4j.create(array);
-             INDArray array2 = Nd4j.create(matrix))
+             INDArray array2 = Nd4j.create(floatMatrix))
         {
-            return array1.mmul(array2.transpose()).toFloatVector();
+            return new Vector(vector.getFloatType(), array1.mmul(array2.transpose()).toFloatVector());
         }
     }
 
     @Override
-    public float[][] splitVector(float[] vector, int count)
+    public Vector[] splitVector(Vector vector, int count)
     {
-        try (INDArray array = Nd4j.create(vector))
+        try (INDArray array = Nd4j.create(vector.getFloat32Values()))
         {
-            return array.reshape(count, vector.length / count).toFloatMatrix();
+            float[][] matrix = array.reshape(count, vector.size() / count).toFloatMatrix();
+
+            Vector[] result = new Vector[matrix.length];
+            for (int i = 0; i < matrix.length; i++)
+            {
+                result[i] = new Vector(vector.getFloatType(), matrix[i]);
+            }
+
+            return result;
         }
     }
 
     @Override
-    public float[] flattenMatrix(float[][] matrix)
+    public Vector flattenMatrix(Vector[] matrix)
     {
-        long size = (long) matrix.length * matrix[0].length;
+        long size = (long) matrix.length * matrix[0].size();
 
-        try (INDArray array = Nd4j.create(matrix))
+        float[][] floatMatrix = new float[matrix.length][];
+        for (int i = 0; i < matrix.length; i++)
         {
-            return array.reshape(size).toFloatVector();
+            floatMatrix[i] = matrix[i].getFloat32Values();
+        }
+
+        try (INDArray array = Nd4j.create(floatMatrix))
+        {
+            return new Vector(matrix[0].getFloatType(), array.reshape(size).toFloatVector());
         }
     }
 
     @Override
-    public float average(float[] vector)
+    public float average(Vector vector)
     {
-        try (INDArray array = Nd4j.create(vector))
+        try (INDArray array = Nd4j.create(vector.getFloat32Values()))
         {
             return array.meanNumber().floatValue();
         }

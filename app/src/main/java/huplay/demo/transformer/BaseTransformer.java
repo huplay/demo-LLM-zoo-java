@@ -1,6 +1,7 @@
 package huplay.demo.transformer;
 
 import huplay.demo.config.Config;
+import huplay.demo.util.Vector;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,7 +36,7 @@ public abstract class BaseTransformer extends ParameterStore
     /**
      * Process a single token
      */
-    public abstract float[] execute(int pos, int token, boolean isOutputProcessing);
+    public abstract Vector execute(int pos, int token, boolean isOutputProcessing);
 
     /**
      * Clear stored values in all decoders to start a new session

@@ -7,12 +7,13 @@ import java.util.TreeSet;
 public abstract class AbstractUtil implements Utility
 {
     @Override
-    public float max(float[] vector)
+    public float max(Vector vector)
     {
         float max = Float.NEGATIVE_INFINITY;
 
-        for (float value : vector)
+        for (int i = 0; i < vector.size(); i++)
         {
+            float value = vector.get(i);
             if (value > max)
             {
                 max = value;
@@ -39,30 +40,30 @@ public abstract class AbstractUtil implements Utility
     }
 
     @Override
-    public float[] normalize(float[] vector, float epsilon)
+    public Vector normalize(Vector vector, float epsilon)
     {
         float average = average(vector);
         float averageDiff = averageDiff(vector, average, epsilon);
 
-        float[] norm = new float[vector.length];
+        Vector norm = new Vector(vector.getFloatType(), vector.size());
 
-        for (int i = 0; i < vector.length; i++)
+        for (int i = 0; i < vector.size(); i++)
         {
-            norm[i] = (vector[i] - average) / averageDiff;
+            norm.set(i, (vector.get(i) - average) / averageDiff);
         }
 
         return norm;
     }
 
     @Override
-    public float averageDiff(float[] values, float average, float epsilon)
+    public float averageDiff(Vector values, float average, float epsilon)
     {
-        float[] squareDiff = new float[values.length];
+        Vector squareDiff = new Vector(values.getFloatType(), values.size());
 
-        for (int i = 0; i < values.length; i++)
+        for (int i = 0; i < values.size(); i++)
         {
-            float diff = values[i] - average;
-            squareDiff[i] = diff * diff;
+            float diff = values.get(i) - average;
+            squareDiff.set(i, diff * diff);
         }
 
         float averageSquareDiff = average(squareDiff);

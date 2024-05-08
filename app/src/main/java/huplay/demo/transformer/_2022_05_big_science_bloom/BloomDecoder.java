@@ -3,6 +3,7 @@ package huplay.demo.transformer._2022_05_big_science_bloom;
 import huplay.demo.TransformerUtil;
 import huplay.demo.config.Config;
 import huplay.demo.transformer.BaseDecoder;
+import huplay.demo.util.Vector;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,6 +11,7 @@ import java.util.List;
 import static huplay.demo.AppLoader.UTIL;
 import static huplay.demo.TransformerUtil.*;
 import static huplay.demo.config.ParameterType.*;
+import static huplay.demo.util.Vector.newVectorArray;
 
 /**
  * BLOOM decoder implementation
@@ -20,8 +22,8 @@ public class BloomDecoder extends BaseDecoder
 {
     private final float[] positionSlope;
 
-    protected final List<List<float[]>> storedKeys = new ArrayList<>(headCount);
-    protected final List<List<float[]>> storedValues = new ArrayList<>(headCount);
+    protected final List<List<Vector>> storedKeys = new ArrayList<>(headCount);
+    protected final List<List<Vector>> storedValues = new ArrayList<>(headCount);
 
     public BloomDecoder(Config config, int decoderId)
     {
@@ -59,7 +61,7 @@ public class BloomDecoder extends BaseDecoder
         }
     }
 
-    public float[] execute(float[] hiddenState, boolean isOutputProcessing)
+    public Vector execute(Vector hiddenState, boolean isOutputProcessing)
     {
         // Attention block
         hiddenState = attentionBlock(hiddenState);
@@ -73,10 +75,10 @@ public class BloomDecoder extends BaseDecoder
         return hiddenState;
     }
 
-    private float[] attentionBlock(float[] inputHiddenState)
+    private Vector attentionBlock(Vector inputHiddenState)
     {
         // Normalisation
-        float[] hiddenState = layerNorm(inputHiddenState, vector(ATT_NORM_WEIGHT), vector(ATT_NORM_BIAS), epsilon);
+        Vector hiddenState = layerNorm(inputHiddenState, vector(ATT_NORM_WEIGHT), vector(ATT_NORM_BIAS), epsilon);
 
         // Attention
         hiddenState = attention(hiddenState);
@@ -87,10 +89,10 @@ public class BloomDecoder extends BaseDecoder
         return hiddenState;
     }
 
-    private float[] feedForwardBlock(float[] inputHiddenState)
+    private Vector feedForwardBlock(Vector inputHiddenState)
     {
         // Normalisation
-        float[] hiddenState = layerNorm(inputHiddenState, vector(MLP_NORM_WEIGHT), vector(MLP_NORM_BIAS), epsilon);
+        Vector hiddenState = layerNorm(inputHiddenState, vector(MLP_NORM_WEIGHT), vector(MLP_NORM_BIAS), epsilon);
 
         // Neural layers
         hiddenState = neuralLayers(hiddenState);
@@ -101,28 +103,28 @@ public class BloomDecoder extends BaseDecoder
         return hiddenState;
     }
 
-    private float[] attention(float[] hiddenState)
+    private Vector attention(Vector hiddenState)
     {
         // Calculate the query-key-value vectors for the actual token
-        float[] queryKeyValue = UTIL.mulVectorByTransposedMatrix(hiddenState, matrix(ATT_QUERY_KEY_VALUE_WEIGHT));
+        Vector queryKeyValue = UTIL.mulVectorByTransposedMatrix(hiddenState, matrix(ATT_QUERY_KEY_VALUE_WEIGHT));
         queryKeyValue = UTIL.addVectors(queryKeyValue, vector(ATT_QUERY_KEY_VALUE_BIAS));
 
         // Split the query, key and value vectors into pieces for all heads
-        float[][] queryKeyValuesByHead = UTIL.splitVector(queryKeyValue, headCount);
+        Vector[] queryKeyValuesByHead = UTIL.splitVector(queryKeyValue, headCount);
 
         // Declaration of the variable for collecting the attention results for all heads
-        float[][] valueAggregate = new float[headCount][headSize];
+        Vector[] valueAggregate = newVectorArray(hiddenState.getFloatType(), headCount, headSize);
 
         // Scoring the previous tokens (including the actual), separately for all heads
         for (int head = 0; head < headCount; head++)
         {
-            float[] queryKeyValueByHead = queryKeyValuesByHead[head];
+            Vector queryKeyValueByHead = queryKeyValuesByHead[head];
 
             // Split the query/key/value
-            float[][] split = UTIL.splitVector(queryKeyValueByHead, 3);
-            float[] queryByHead = split[0];
-            float[] keyByHead = split[1];
-            float[] valueByHead = split[2];
+            Vector[] split = UTIL.splitVector(queryKeyValueByHead, 3);
+            Vector queryByHead = split[0];
+            Vector keyByHead = split[1];
+            Vector valueByHead = split[2];
 
             storedKeys.get(head).add(keyByHead);
             storedValues.get(head).add(valueByHead);
@@ -131,19 +133,19 @@ public class BloomDecoder extends BaseDecoder
             int storedSize = storedKeys.get(head).size();
 
             // Calculate the scores
-            float[] scores = new float[storedSize];
+            Vector scores = new Vector(hiddenState.getFloatType(), storedSize);
 
             for (int pos = 0; pos < storedSize; pos++)
             {
                 // The score is calculated multiplying the "actual" query vector and the "related" key vector
-                float[] relatedKey = storedKeys.get(head).get(pos);
+                Vector relatedKey = storedKeys.get(head).get(pos);
                 float score = UTIL.dotProduct(queryByHead, relatedKey);
 
                 // Position embedding at score
                 score = score - positionSlope[head] * (storedSize - pos - 1);
 
                 // Divide the score by the attention dividend
-                scores[pos] = score / attentionDividend;
+                scores.set(pos, score / attentionDividend);
             }
 
             // Rescaling the scores to values between 0 and 1
@@ -152,8 +154,8 @@ public class BloomDecoder extends BaseDecoder
             // Multiply the value matrices with the scores, and sum up
             for (int pos = 0; pos < storedSize; pos++)
             {
-                float[] relatedValue = storedValues.get(head).get(pos);
-                float[] multipliedValue = UTIL.mulVectorByScalar(relatedValue, scores[pos]);
+                Vector relatedValue = storedValues.get(head).get(pos);
+                Vector multipliedValue = UTIL.mulVectorByScalar(relatedValue, scores.get(pos));
                 valueAggregate[head] = UTIL.addVectors(valueAggregate[head], multipliedValue);
             }
         }
@@ -168,7 +170,7 @@ public class BloomDecoder extends BaseDecoder
         return hiddenState;
     }
 
-    private float[] neuralLayers(float[] hiddenState)
+    private Vector neuralLayers(Vector hiddenState)
     {
         // Layer 1: <mlpSize> neurons (usually 4 * <hiddenSize>) (using a gelu activation function)
         hiddenState = UTIL.mulVectorByTransposedMatrix(hiddenState, matrix(MLP_1_WEIGHT));
@@ -176,7 +178,7 @@ public class BloomDecoder extends BaseDecoder
 
         for (int neuron = 0; neuron < feedForwardSize; neuron++)
         {
-            hiddenState[neuron] = TransformerUtil.gelu(hiddenState[neuron]);
+            hiddenState.set(neuron, TransformerUtil.gelu(hiddenState.get(neuron)));
         }
 
         // Layer 2: <hiddenSize> neurons (without activation function)

@@ -4,8 +4,13 @@ import huplay.demo.util.IndexedValue;
 import huplay.demo.config.Config;
 import huplay.demo.tokenizer.Tokenizer;
 import huplay.demo.transformer.BaseTransformer;
+import huplay.demo.util.Vector;
 
-import java.util.*;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import static huplay.demo.AppMain.OUT;
 import static huplay.demo.AppLoader.UTIL;
 import static huplay.demo.config.ParameterType.TOKEN_EMBEDDINGS;
@@ -61,7 +66,7 @@ public class Generate
         for (int pos = intputSize - 1; pos < config.getLengthLimit() + intputSize; pos++)
         {
             // Add the last input token or the previously generated new token as input
-            float[] hiddenState = transformer.execute(pos + startPos, token, true);
+            Vector hiddenState = transformer.execute(pos + startPos, token, true);
 
             token = determineOutputToken(hiddenState);
             result.add(token);
@@ -76,11 +81,11 @@ public class Generate
         return result;
     }
 
-    private int determineOutputToken(float[] hiddenState)
+    private int determineOutputToken(Vector hiddenState)
     {
         // Multiply (dot product) the output with all token embeddings.
         // It will give a higher value if the output is more similar to the token embedding
-        float[] logits = UTIL.mulVectorByTransposedMatrix(hiddenState, transformer.matrix(TOKEN_EMBEDDINGS));
+        float[] logits = UTIL.mulVectorByTransposedMatrix(hiddenState, transformer.matrix(TOKEN_EMBEDDINGS)).getFloat32Values();
 
         // Sort (higher to lower) the result of the dot products, retaining the order (index) of the related token
         List<IndexedValue> orderedLogits = UTIL.reverseAndFilter(logits, config.getTopK());

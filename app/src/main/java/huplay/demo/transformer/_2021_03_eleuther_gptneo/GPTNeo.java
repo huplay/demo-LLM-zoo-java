@@ -4,6 +4,7 @@ import huplay.demo.transformer.DecoderType;
 import huplay.demo.config.Config;
 import huplay.demo.transformer.BaseTransformer;
 import huplay.demo.transformer.BaseDecoder;
+import huplay.demo.util.Vector;
 
 import static huplay.demo.AppLoader.UTIL;
 import static huplay.demo.TransformerUtil.layerNorm;
@@ -34,10 +35,10 @@ public class GPTNeo extends BaseTransformer
         loadVector(OUTPUT_NORM_BIAS, "ln_f.bias", hiddenSize);
     }
 
-    public float[] execute(int pos, int token, boolean isOutputProcessing)
+    public Vector execute(int pos, int token, boolean isOutputProcessing)
     {
         // Find the embeddings of the token
-        float[] hiddenState = matrix(TOKEN_EMBEDDINGS)[token];
+        Vector hiddenState = matrix(TOKEN_EMBEDDINGS)[token];
 
         // Position embedding
         hiddenState = UTIL.addVectors(hiddenState, matrix(POSITION_EMBEDDINGS)[pos]);

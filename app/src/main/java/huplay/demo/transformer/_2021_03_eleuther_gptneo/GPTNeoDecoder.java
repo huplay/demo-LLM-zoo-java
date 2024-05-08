@@ -3,10 +3,12 @@ package huplay.demo.transformer._2021_03_eleuther_gptneo;
 import huplay.demo.TransformerUtil;
 import huplay.demo.config.Config;
 import huplay.demo.transformer.BaseDecoder;
+import huplay.demo.util.Vector;
 
 import static huplay.demo.AppLoader.UTIL;
 import static huplay.demo.TransformerUtil.*;
 import static huplay.demo.config.ParameterType.*;
+import static huplay.demo.util.Vector.newVectorArray;
 
 /**
  * EleutherAI GPT-NEO decoder implementation
@@ -39,7 +41,7 @@ public class GPTNeoDecoder extends BaseDecoder
         maxAttentionSize = 256; // TODO: Move sparse attention to logic, not as config
     }
 
-    public float[] execute(float[] hiddenState, boolean isOutputProcessing)
+    public Vector execute(Vector hiddenState, boolean isOutputProcessing)
     {
         // Attention block
         hiddenState = attentionBlock(hiddenState);
@@ -53,10 +55,10 @@ public class GPTNeoDecoder extends BaseDecoder
         return hiddenState;
     }
 
-    private float[] attentionBlock(float[] inputHiddenState)
+    private Vector attentionBlock(Vector inputHiddenState)
     {
         // Normalisation
-        float[] hiddenState = layerNorm(inputHiddenState, vector(ATT_NORM_WEIGHT), vector(ATT_NORM_BIAS), epsilon);
+        Vector hiddenState = layerNorm(inputHiddenState, vector(ATT_NORM_WEIGHT), vector(ATT_NORM_BIAS), epsilon);
 
         // Attention
         hiddenState = attention(hiddenState);
@@ -67,10 +69,10 @@ public class GPTNeoDecoder extends BaseDecoder
         return hiddenState;
     }
 
-    private float[] feedForwardBlock(float[] inputHiddenState)
+    private Vector feedForwardBlock(Vector inputHiddenState)
     {
         // Normalisation
-        float[] hiddenState = layerNorm(inputHiddenState, vector(MLP_NORM_WEIGHT), vector(MLP_NORM_BIAS), epsilon);
+        Vector hiddenState = layerNorm(inputHiddenState, vector(MLP_NORM_WEIGHT), vector(MLP_NORM_BIAS), epsilon);
 
         // Neural layers
         hiddenState = neuralLayers(hiddenState);
@@ -81,17 +83,17 @@ public class GPTNeoDecoder extends BaseDecoder
         return hiddenState;
     }
 
-    private float[] attention(float[] hiddenState)
+    private Vector attention(Vector hiddenState)
     {
         // Calculate the query, key and value vectors for the actual token
-        float[] query = UTIL.mulVectorByTransposedMatrix(hiddenState, matrix(ATT_QUERY_WEIGHT));
-        float[] key = UTIL.mulVectorByTransposedMatrix(hiddenState, matrix(ATT_KEY_WEIGHT));
-        float[] value = UTIL.mulVectorByTransposedMatrix(hiddenState, matrix(ATT_VALUE_WEIGHT));
+        Vector query = UTIL.mulVectorByTransposedMatrix(hiddenState, matrix(ATT_QUERY_WEIGHT));
+        Vector key = UTIL.mulVectorByTransposedMatrix(hiddenState, matrix(ATT_KEY_WEIGHT));
+        Vector value = UTIL.mulVectorByTransposedMatrix(hiddenState, matrix(ATT_VALUE_WEIGHT));
 
         // Split the query, key and value vectors into pieces for all heads
-        float[][] queryByHead = UTIL.splitVector(query, headCount);
-        float[][] keyByHead = UTIL.splitVector(key, headCount);
-        float[][] valueByHead = UTIL.splitVector(value, headCount);
+        Vector[] queryByHead = UTIL.splitVector(query, headCount);
+        Vector[] keyByHead = UTIL.splitVector(key, headCount);
+        Vector[] valueByHead = UTIL.splitVector(value, headCount);
 
         // Store the keys and values (these will be available while the following tokens will be processed)
         storedKeys.add(keyByHead);
@@ -107,20 +109,20 @@ public class GPTNeoDecoder extends BaseDecoder
         }*/
 
         // Declaration of the variable for collecting the attention results for all heads
-        float[][] valueAggregate = new float[headCount][headSize];
+        Vector[] valueAggregate = newVectorArray(hiddenState.getFloatType(), headCount, headSize);
 
         // Scoring the previous tokens (including the actual), separately for all heads
         for (int head = 0; head < headCount; head++)
         {
             // Calculate the scores
-            float[] actualQuery = queryByHead[head];
-            float[] scores = new float[storedSize];
+            Vector actualQuery = queryByHead[head];
+            Vector scores = new Vector(actualQuery.getFloatType(), storedSize);
 
             for (int pos = 0; pos < storedSize; pos++)
             {
                 // The score is calculated multiplying the "actual" query vector and the "related" key vector
-                float[] relatedKey = storedKeys.get(pos)[head];
-                scores[pos] = UTIL.dotProduct(actualQuery, relatedKey);
+                Vector relatedKey = storedKeys.get(pos)[head];
+                scores.set(pos, UTIL.dotProduct(actualQuery, relatedKey));
             }
 
             // Rescaling the scores to values between 0 and 1
@@ -129,8 +131,8 @@ public class GPTNeoDecoder extends BaseDecoder
             // Multiply the value matrices with the scores, and sum up
             for (int pos = 0; pos < storedSize; pos++)
             {
-                float[] relatedValue = storedValues.get(pos)[head];
-                float[] multipliedValue = UTIL.mulVectorByScalar(relatedValue, scores[pos]);
+                Vector relatedValue = storedValues.get(pos)[head];
+                Vector multipliedValue = UTIL.mulVectorByScalar(relatedValue, scores.get(pos));
                 valueAggregate[head] = UTIL.addVectors(valueAggregate[head], multipliedValue);
             }
         }
@@ -145,7 +147,7 @@ public class GPTNeoDecoder extends BaseDecoder
         return hiddenState;
     }
 
-    private float[] neuralLayers(float[] hiddenState)
+    private Vector neuralLayers(Vector hiddenState)
     {
         // Layer 1: <mlpSize> neurons (usually 4 * <hiddenSize>) (using a gelu activation function)
         hiddenState = UTIL.mulVectorByTransposedMatrix(hiddenState, matrix(MLP_1_WEIGHT));
@@ -153,7 +155,7 @@ public class GPTNeoDecoder extends BaseDecoder
 
         for (int neuron = 0; neuron < feedForwardSize; neuron++)
         {
-            hiddenState[neuron] = TransformerUtil.gelu(hiddenState[neuron]);
+            hiddenState.set(neuron, TransformerUtil.gelu(hiddenState.get(neuron)));
         }
 
         // Layer 2: <hiddenSize> neurons (without activation function)

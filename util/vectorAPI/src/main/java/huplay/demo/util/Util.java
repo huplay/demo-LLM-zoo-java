@@ -16,104 +16,108 @@ public class Util extends AbstractUtil
     }
 
     @Override
-    public float[] addVectors(float[] vector1, float[] vector2)
+    public Vector addVectors(Vector vector1, Vector vector2)
     {
-        float[] result = new float[vector1.length];
+        float[] result = new float[vector1.size()];
 
-        for (int i = 0; i < vector1.length; i += SPECIES.length())
+        for (int i = 0; i < vector1.size(); i += SPECIES.length())
         {
-            VectorMask<Float> mask = SPECIES.indexInRange(i, vector1.length);
-            FloatVector first = FloatVector.fromArray(SPECIES, vector1, i, mask);
-            FloatVector second = FloatVector.fromArray(SPECIES, vector2, i, mask);
+            VectorMask<Float> mask = SPECIES.indexInRange(i, vector1.size());
+            FloatVector first = FloatVector.fromArray(SPECIES, vector1.getFloat32Values(), i, mask);
+            FloatVector second = FloatVector.fromArray(SPECIES, vector2.getFloat32Values(), i, mask);
             first.add(second).intoArray(result, i, mask);
         }
 
-        return result;
+        return new Vector(vector1.getFloatType(), result);
     }
 
     @Override
-    public float dotProduct(float[] a, float[] b)
+    public float dotProduct(Vector vector1, Vector vector2)
     {
-        var upperBound = SPECIES.loopBound(a.length);
+        var upperBound = SPECIES.loopBound(vector1.size());
         var sum = FloatVector.zero(SPECIES);
 
         var i = 0;
         for (; i < upperBound; i += SPECIES.length())
         {
-            // FloatVector va, vb, vc
-            var va = FloatVector.fromArray(SPECIES, a, i);
-            var vb = FloatVector.fromArray(SPECIES, b, i);
+            var va = FloatVector.fromArray(SPECIES, vector1.getFloat32Values(), i);
+            var vb = FloatVector.fromArray(SPECIES, vector2.getFloat32Values(), i);
             sum = va.fma(vb, sum);
         }
 
-        var c = sum.reduceLanes(VectorOperators.ADD);
-        for (; i < a.length; i++)
-        { // Cleanup loop
-            c += a[i] * b[i];
-        }
-        return c;
-    }
+        var result = sum.reduceLanes(VectorOperators.ADD);
 
-    @Override
-    public float[] mulVectorByScalar(float[] vector, float scalar)
-    {
-        float[] result = new float[vector.length];
-
-        for (int i = 0; i < vector.length; i += SPECIES.length())
+        // counter "i" has an incremented value from the previous loop
+        for (; i < vector1.size(); i++)
         {
-            VectorMask<Float> mask = SPECIES.indexInRange(i, vector.length);
-            FloatVector floatVector = FloatVector.fromArray(SPECIES, vector, i, mask);
-            floatVector.mul(scalar).intoArray(result, i, mask);
+            result += vector1.get(i) * vector2.get(i);
         }
 
         return result;
     }
 
     @Override
-    // TODO: Vector-api isn't used
-    public float[] mulVectorByMatrix(float[] vector, float[][] matrix)
+    public Vector mulVectorByScalar(Vector vector, float scalar)
     {
-        float[] ret = new float[matrix[0].length];
+        float[] result = new float[vector.size()];
 
-        for (int col = 0; col < matrix[0].length; col++)
+        for (int i = 0; i < vector.size(); i += SPECIES.length())
+        {
+            VectorMask<Float> mask = SPECIES.indexInRange(i, vector.size());
+            FloatVector floatVector = FloatVector.fromArray(SPECIES, vector.getFloat32Values(), i, mask);
+            floatVector.mul(scalar).intoArray(result, i, mask);
+        }
+
+        return new Vector(vector.getFloatType(), result);
+    }
+
+    @Override
+    // TODO: Vector-api isn't used
+    public Vector mulVectorByMatrix(Vector vector, Vector[] matrix)
+    {
+        Vector ret = new Vector(vector.getFloatType(), matrix[0].size());
+
+        for (int col = 0; col < matrix[0].size(); col++)
         {
             float sum = 0;
 
-            for (int i = 0; i < vector.length; i++)
+            for (int i = 0; i < vector.size(); i++)
             {
-                sum = sum + vector[i] * matrix[i][col];
+                sum = sum + vector.get(i) * matrix[i].get(col);
             }
 
-            ret[col] = sum;
+            ret.set(col, sum);
         }
 
         return ret;
     }
 
     @Override
-    public float[] mulVectorByTransposedMatrix(float[] vector, float[][] matrix)
+    public Vector mulVectorByTransposedMatrix(Vector vector, Vector[] matrix)
     {
-        float[] ret = new float[matrix.length];
+        Vector ret = new Vector(vector.getFloatType(), matrix.length);
 
         for (int col = 0; col < matrix.length; col++)
         {
-            ret[col] = dotProduct(vector, matrix[col]);
+            ret.set(col, dotProduct(vector, matrix[col]));
         }
 
         return ret;
     }
 
     @Override
-    public float[][] splitVector(float[] vector, int count)
+    // TODO: Vector-api isn't used
+    public Vector[] splitVector(Vector vector, int count)
     {
-        int size = vector.length / count;
-        float[][] ret = new float[count][size];
+        int size = vector.size() / count;
+        Vector[] ret = Vector.newVectorArray(vector.getFloatType(), count, size);
 
         int segment = 0;
         int col = 0;
-        for (float value : vector)
+        for (int i = 0; i < vector.size(); i++)
         {
-            ret[segment][col] = value;
+            float value = vector.get(i);
+            ret[segment].set(col, value);
 
             if (col == size - 1)
             {
@@ -127,17 +131,19 @@ public class Util extends AbstractUtil
     }
 
     @Override
-    public float[] flattenMatrix(float[][] matrix)
+    // TODO: Vector-api isn't used
+    public Vector flattenMatrix(Vector[] matrix)
     {
-        float[] ret = new float[matrix.length * matrix[0].length];
+        Vector ret = new Vector(matrix[0].getFloatType(), matrix.length * matrix[0].size());
 
         int i = 0;
 
-        for (float[] row : matrix)
+        for (Vector row : matrix)
         {
-            for (float value : row)
+            for (int j = 0; j < row.size(); j++)
             {
-                ret[i] = value;
+                float value = row.get(j);
+                ret.set(i, value);
                 i++;
             }
         }
@@ -146,15 +152,17 @@ public class Util extends AbstractUtil
     }
 
     @Override
-    public float average(float[] vector)
+    // TODO: Vector-api isn't used
+    public float average(Vector vector)
     {
         double sum = 0;
 
-        for (float value : vector)
+        for (int i = 0; i < vector.size(); i++)
         {
+            float value = vector.get(i);
             sum = sum + value;
         }
 
-        return (float) sum / vector.length;
+        return (float) sum / vector.size();
     }
 }

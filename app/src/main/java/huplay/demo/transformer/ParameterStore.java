@@ -3,6 +3,7 @@ package huplay.demo.transformer;
 import huplay.demo.config.Config;
 import huplay.demo.config.ParameterReader;
 import huplay.demo.config.ParameterType;
+import huplay.demo.util.Vector;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -14,8 +15,8 @@ public abstract class ParameterStore
 
     public final ParameterReader reader;
 
-    public final Map<ParameterType, float[]> vectorParams = new HashMap<>();
-    public final Map<ParameterType, float[][]> matrixParams = new HashMap<>();
+    public final Map<ParameterType, Vector> vectorParams = new HashMap<>();
+    public final Map<ParameterType, Vector[]> matrixParams = new HashMap<>();
 
     public ParameterStore(Config config)
     {
@@ -61,12 +62,12 @@ public abstract class ParameterStore
         }
     }
 
-    public float[] vector(ParameterType parameterType)
+    public Vector vector(ParameterType parameterType)
     {
         return vectorParams.get(parameterType);
     }
 
-    public float[][] matrix(ParameterType parameterType)
+    public Vector[] matrix(ParameterType parameterType)
     {
         return matrixParams.get(parameterType);
     }

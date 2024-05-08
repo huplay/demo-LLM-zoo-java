@@ -9,42 +9,42 @@ public interface Utility
     /**
      * Vector to vector addition
      */
-    float[] addVectors(float[] vector1, float[] vector2);
+    Vector addVectors(Vector vector1, Vector vector2);
 
     /**
      * Dot product calculation (multiplying vector by vector)
      */
-    float dotProduct(float[] vector1, float[] vector2);
+    float dotProduct(Vector vector1, Vector vector2);
 
     /**
      * Multiply vector by a scalar
      */
-    float[] mulVectorByScalar(float[] vector, float scalar);
+    Vector mulVectorByScalar(Vector vector, float scalar);
 
     /**
      * Multiply vector by matrix
      */
-    float[] mulVectorByMatrix(float[] vector, float[][] matrix);
+    Vector mulVectorByMatrix(Vector vector, Vector[] matrix);
 
     /**
      * Multiply vector by transposed matrix
      */
-    float[] mulVectorByTransposedMatrix(float[] vector, float[][] matrix);
+    Vector mulVectorByTransposedMatrix(Vector vector, Vector[] matrix);
 
     /**
      * Split a vector to a matrix
      */
-    float[][] splitVector(float[] vector, int count);
+    Vector[] splitVector(Vector vector, int count);
 
     /**
      * Merge the rows of a matrix to a single vector
      */
-    float[] flattenMatrix(float[][] matrix);
+    Vector flattenMatrix(Vector[] matrix);
 
     /**
      * Finds the maximum value in the vector
      */
-    float max(float[] vector);
+    float max(Vector vector);
 
     /**
      * Finds the maximum value in a list of IndexedValue
@@ -54,15 +54,15 @@ public interface Utility
     /**
      * Calculate average (mean) value
      */
-    float average(float[] vector);
+    float average(Vector vector);
 
     /**
      * Calculate the average difference
      */
-    float averageDiff(float[] values, float average, float epsilon);
+    float averageDiff(Vector values, float average, float epsilon);
 
     /**
      * Standard normalization - (value - avg) * sqrt( (value - avg)^2 + epsilon)
      */
-    float[] normalize(float[] vector, float epsilon);
+    Vector normalize(Vector vector, float epsilon);
 }

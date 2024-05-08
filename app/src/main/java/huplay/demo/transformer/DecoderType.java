@@ -2,7 +2,7 @@ package huplay.demo.transformer;
 
 import huplay.demo.IdentifiedException;
 import huplay.demo.config.Config;
-import huplay.demo.transformer._2018_01_google_transformer.TransformerDecoder;
+import huplay.demo.transformer._2018_01_google_transformer.OriginalTransformerDecoder;
 import huplay.demo.transformer._2021_03_eleuther_gptneo.GPTNeoDecoder;
 import huplay.demo.transformer._2021_06_eleuther_gptj.GPTJDecoder;
 import huplay.demo.transformer._2022_05_big_science_bloom.BloomDecoder;
@@ -24,7 +24,7 @@ public enum DecoderType
     {
         switch (this)
         {
-            case ORIGINAL_DECODER: return new TransformerDecoder(config, decoderId);
+            case ORIGINAL_DECODER: return new OriginalTransformerDecoder(config, decoderId);
             case OPENAI_GPT_1: return new GPT1Decoder(config, decoderId);
             case OPENAI_GPT_2: return new GPT2Decoder(config, decoderId);
             case BIG_SCIENCE_BLOOM: return new BloomDecoder(config, decoderId);
